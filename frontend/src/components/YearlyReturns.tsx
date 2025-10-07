@@ -1,16 +1,37 @@
-import React from 'react';
-import { Calendar, TrendingUp, TrendingDown, Target, BarChart3 } from 'lucide-react';
-import type { PortfolioSummary as PortfolioSummaryType, PortfolioPerformance as PortfolioPerformanceType } from '../types';
+import { useState, useEffect } from 'react';
+import { Calendar, TrendingUp, DollarSign, Coins, PiggyBank, ChevronDown, ChevronUp } from 'lucide-react';
+import { api } from '../api/client';
+import type { YearlyReturnsDetail, PortfolioSummary, PortfolioPerformance } from '../types';
 
 interface YearlyReturnsProps {
-  portfolioSummary: PortfolioSummaryType;
-  portfolioPerformance: PortfolioPerformanceType;
+  sessionId: string;
+  portfolioSummary?: PortfolioSummary;
+  portfolioPerformance?: PortfolioPerformance;
 }
 
-const YearlyReturns: React.FC<YearlyReturnsProps> = ({ 
-  portfolioSummary, 
-  portfolioPerformance 
-}) => {
+const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
+  const [yearlyData, setYearlyData] = useState<YearlyReturnsDetail[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
+
+  useEffect(() => {
+    loadYearlyReturns();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [sessionId]);
+
+  const loadYearlyReturns = async () => {
+    try {
+      setLoading(true);
+      const data = await api.getYearlyReturns(sessionId);
+      setYearlyData(data.sort((a: YearlyReturnsDetail, b: YearlyReturnsDetail) => b.year - a.year)); // 최신 연도 먼저
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '수익 내역을 불러오는데 실패했습니다');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
       style: 'currency',
@@ -18,157 +39,234 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({
     }).format(amount);
   };
 
-  const formatPercentage = (value: number) => {
-    return `${value >= 0 ? '+' : ''}${value.toFixed(2)}%`;
+  const toggleYear = (year: number) => {
+    const newExpanded = new Set(expandedYears);
+    if (newExpanded.has(year)) {
+      newExpanded.delete(year);
+    } else {
+      newExpanded.add(year);
+    }
+    setExpandedYears(newExpanded);
   };
 
-  const getColorClass = (value: number) => {
-    if (value > 0) return 'text-green-600';
-    if (value < 0) return 'text-red-600';
-    return 'text-gray-600';
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
 
-  const getBgColorClass = (value: number) => {
-    if (value > 0) return 'bg-green-50 border-green-200';
-    if (value < 0) return 'bg-red-50 border-red-200';
-    return 'bg-gray-50 border-gray-200';
-  };
+  if (error) {
+    return (
+      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+        <p className="text-red-700">{error}</p>
+      </div>
+    );
+  }
 
-  // 현재 연도 계산
-  const currentYear = new Date().getFullYear();
-  
-  // 승률 계산
-  const winRate = portfolioPerformance.account_performance ? 
-    Object.values(portfolioPerformance.account_performance).reduce((acc, perf) => acc + (perf.return_rate > 0 ? 1 : 0), 0) / 
-    Object.keys(portfolioPerformance.account_performance).length * 100 : 0;
+  // 전체 수익 계산
+  const totalReturns = yearlyData.reduce((sum, year) => ({
+    dividend: sum.dividend + year.total_dividend,
+    sell_profit: sum.sell_profit + year.total_sell_profit,
+    interest: sum.interest + year.total_interest,
+    total: sum.total + year.total_returns,
+  }), { dividend: 0, sell_profit: 0, interest: 0, total: 0 });
 
   return (
-    <div className="p-4 space-y-4">
-      <div className="text-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">{currentYear}년 수익 현황</h3>
-        <p className="text-sm text-gray-600">올해 투자 성과 분석</p>
+    <div className="p-6 space-y-6 overflow-auto h-full">
+      {/* 헤더 */}
+      <div className="text-center">
+        <h2 className="text-2xl font-bold text-gray-900">수익 내역</h2>
+        <p className="text-sm text-gray-600 mt-1">배당금, 매도 차익, 이자 수익</p>
       </div>
 
-      {/* 전체 수익률 */}
-      <div className={`border rounded-lg p-4 ${getBgColorClass(portfolioSummary.stock_portfolio.return_rate)}`}>
-        <div className="flex items-center justify-between mb-2">
-          <div className="flex items-center space-x-2">
-            <TrendingUp className="w-5 h-5 text-gray-600" />
-            <span className="font-medium text-gray-900">전체 수익률</span>
-          </div>
-          <div className={`text-xl font-bold ${getColorClass(portfolioSummary.stock_portfolio.return_rate)}`}>
-            {formatPercentage(portfolioSummary.stock_portfolio.return_rate)}
-          </div>
-        </div>
-        <div className="text-sm text-gray-600">
-          {formatCurrency(portfolioSummary.stock_portfolio.unrealized_gain_loss)}
-        </div>
-      </div>
-
-      {/* 투자 현황 */}
-      <div className="grid grid-cols-1 gap-3">
-        <div className="bg-white border border-gray-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Target className="w-4 h-4 text-blue-600" />
-              <span className="text-sm font-medium text-gray-700">총 투자금</span>
-            </div>
-            <span className="font-semibold text-gray-900">
-              {formatCurrency(portfolioSummary.stock_portfolio.total_investment)}
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-gray-700">현재 가치</span>
-            </div>
-            <span className="font-semibold text-gray-900">
-              {formatCurrency(portfolioSummary.stock_portfolio.current_value)}
-            </span>
-          </div>
-        </div>
-
-        <div className="bg-white border border-gray-200 rounded-lg p-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2">
-              <Calendar className="w-4 h-4 text-purple-600" />
-              <span className="text-sm font-medium text-gray-700">승률</span>
-            </div>
-            <span className="font-semibold text-gray-900">
-              {winRate.toFixed(1)}%
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* 상위/하위 성과 */}
-      <div className="space-y-3">
-        <h4 className="font-medium text-gray-900">주요 성과</h4>
+      {/* 전체 수익 요약 */}
+      <div className="bg-gradient-to-br from-blue-50 to-indigo-50 border border-blue-200 rounded-xl p-6">
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <DollarSign className="w-5 h-5 mr-2 text-blue-600" />
+          전체 수익 요약
+        </h3>
         
-        {portfolioPerformance.top_performers.length > 0 && (
-          <div className="bg-green-50 border border-green-200 rounded-lg p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <TrendingUp className="w-4 h-4 text-green-600" />
-              <span className="text-sm font-medium text-green-800">최고 수익 종목</span>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <PiggyBank className="w-4 h-4 text-green-600" />
+                <span className="text-sm font-medium text-gray-700">배당금</span>
+              </div>
             </div>
-            <div className="text-sm">
-              <div className="font-medium text-green-900">
-                {portfolioPerformance.top_performers[0].security}
-              </div>
-              <div className="text-green-700">
-                {formatPercentage(portfolioPerformance.top_performers[0].return_rate)}
-              </div>
+            <div className="text-xl font-bold text-green-600">
+              {formatCurrency(totalReturns.dividend)}
             </div>
           </div>
-        )}
 
-        {portfolioPerformance.bottom_performers.length > 0 && (
-          <div className="bg-red-50 border border-red-200 rounded-lg p-3">
-            <div className="flex items-center space-x-2 mb-2">
-              <TrendingDown className="w-4 h-4 text-red-600" />
-              <span className="text-sm font-medium text-red-800">최저 수익 종목</span>
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <TrendingUp className="w-4 h-4 text-blue-600" />
+                <span className="text-sm font-medium text-gray-700">매도 차익</span>
+              </div>
             </div>
-            <div className="text-sm">
-              <div className="font-medium text-red-900">
-                {portfolioPerformance.bottom_performers[0].security}
-              </div>
-              <div className="text-red-700">
-                {formatPercentage(portfolioPerformance.bottom_performers[0].return_rate)}
-              </div>
+            <div className={`text-xl font-bold ${totalReturns.sell_profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
+              {formatCurrency(totalReturns.sell_profit)}
             </div>
           </div>
-        )}
-      </div>
 
-      {/* 자산 배분 */}
-      <div className="space-y-2">
-        <h4 className="font-medium text-gray-900">자산 배분</h4>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>현금</span>
-            <span>{portfolioSummary.asset_allocation.cash_ratio.toFixed(1)}%</span>
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <Coins className="w-4 h-4 text-purple-600" />
+                <span className="text-sm font-medium text-gray-700">이자 수익</span>
+              </div>
+            </div>
+            <div className="text-xl font-bold text-purple-600">
+              {formatCurrency(totalReturns.interest)}
+            </div>
           </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-blue-600 h-2 rounded-full"
-              style={{ width: `${portfolioSummary.asset_allocation.cash_ratio}%` }}
-            ></div>
+
+          <div className="bg-white rounded-lg p-4 shadow-sm">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center space-x-2">
+                <DollarSign className="w-4 h-4 text-indigo-600" />
+                <span className="text-sm font-medium text-gray-700">총 수익</span>
+              </div>
+            </div>
+            <div className="text-xl font-bold text-indigo-600">
+              {formatCurrency(totalReturns.total)}
+            </div>
           </div>
         </div>
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span>주식</span>
-            <span>{portfolioSummary.asset_allocation.stock_ratio.toFixed(1)}%</span>
-          </div>
-          <div className="w-full bg-gray-200 rounded-full h-2">
-            <div 
-              className="bg-green-600 h-2 rounded-full"
-              style={{ width: `${portfolioSummary.asset_allocation.stock_ratio}%` }}
-            ></div>
-          </div>
+      </div>
+
+      {/* 연도별 수익 내역 */}
+      <div>
+        <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+          <Calendar className="w-5 h-5 mr-2 text-gray-600" />
+          연도별 수익 내역
+        </h3>
+
+        <div className="space-y-3">
+          {yearlyData.map((yearData) => (
+            <div key={yearData.year} className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              {/* 연도 헤더 */}
+              <button
+                onClick={() => toggleYear(yearData.year)}
+                className="w-full px-4 py-3 flex items-center justify-between hover:bg-gray-50 transition-colors"
+              >
+                <div className="flex items-center space-x-3">
+                  <Calendar className="w-5 h-5 text-gray-600" />
+                  <span className="font-semibold text-gray-900">{yearData.year}년</span>
+                  <span className="text-sm text-gray-600">
+                    총 수익: <span className="font-medium text-indigo-600">{formatCurrency(yearData.total_returns)}</span>
+                  </span>
+                </div>
+                {expandedYears.has(yearData.year) ? (
+                  <ChevronUp className="w-5 h-5 text-gray-400" />
+                ) : (
+                  <ChevronDown className="w-5 h-5 text-gray-400" />
+                )}
+              </button>
+
+              {/* 연도별 상세 내역 */}
+              {expandedYears.has(yearData.year) && (
+                <div className="px-4 pb-4 border-t border-gray-100">
+                  {/* 수익 요약 */}
+                  <div className="grid grid-cols-3 gap-3 mt-3 mb-4">
+                    <div className="bg-green-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-600 mb-1">배당금</div>
+                      <div className="font-semibold text-green-700">
+                        {formatCurrency(yearData.total_dividend)}
+                      </div>
+                    </div>
+                    <div className="bg-blue-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-600 mb-1">매도 차익</div>
+                      <div className={`font-semibold ${yearData.total_sell_profit >= 0 ? 'text-blue-700' : 'text-red-700'}`}>
+                        {formatCurrency(yearData.total_sell_profit)}
+                      </div>
+                    </div>
+                    <div className="bg-purple-50 rounded-lg p-3">
+                      <div className="text-xs text-gray-600 mb-1">이자 수익</div>
+                      <div className="font-semibold text-purple-700">
+                        {formatCurrency(yearData.total_interest)}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* 소유자 및 계좌 타입별 종목 수익 */}
+                  {Object.keys(yearData.by_owner_and_account).length > 0 && (
+                    <div>
+                      <h4 className="text-sm font-medium text-gray-700 mb-3">계좌별 종목 수익</h4>
+                      <div className="space-y-3">
+                        {Object.entries(yearData.by_owner_and_account).map(([owner, accountTypes]) => (
+                          <div key={owner} className="border border-gray-200 rounded-lg overflow-hidden">
+                            {/* 소유자 헤더 */}
+                            <div className="bg-gradient-to-r from-blue-50 to-indigo-50 px-3 py-2 border-b border-gray-200">
+                              <span className="font-semibold text-gray-900">👤 {owner}</span>
+                            </div>
+                            
+                            {/* 계좌 타입별 */}
+                            <div className="p-3 space-y-3">
+                              {Object.entries(accountTypes).map(([accountType, securities]) => {
+                                const accountTotal = Object.values(securities).reduce(
+                                  (sum, data) => sum + data.dividend + data.sell_profit,
+                                  0
+                                );
+                                
+                                return (
+                                  <div key={accountType} className="bg-white rounded-lg border border-gray-100">
+                                    {/* 계좌 타입 헤더 */}
+                                    <div className="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between">
+                                      <span className="text-sm font-medium text-gray-700">📁 {accountType}</span>
+                                      <span className="text-sm font-semibold text-indigo-600">
+                                        {formatCurrency(accountTotal)}
+                                      </span>
+                                    </div>
+                                    
+                                    {/* 종목별 수익 */}
+                                    <div className="p-2 space-y-2">
+                                      {Object.entries(securities)
+                                        .sort(([, a], [, b]) => (b.dividend + b.sell_profit) - (a.dividend + a.sell_profit))
+                                        .map(([security, data]) => (
+                                          <div key={security} className="bg-gray-50 rounded p-2">
+                                            <div className="flex items-center justify-between mb-1">
+                                              <span className="text-sm font-medium text-gray-900">{security}</span>
+                                              <span className="text-sm font-semibold text-indigo-600">
+                                                {formatCurrency(data.dividend + data.sell_profit)}
+                                              </span>
+                                            </div>
+                                            <div className="flex items-center space-x-3 text-xs text-gray-600">
+                                              {data.dividend > 0 && (
+                                                <div className="flex items-center space-x-1">
+                                                  <PiggyBank className="w-3 h-3" />
+                                                  <span>배당: {formatCurrency(data.dividend)}</span>
+                                                </div>
+                                              )}
+                                              {data.sell_profit !== 0 && (
+                                                <div className="flex items-center space-x-1">
+                                                  <TrendingUp className="w-3 h-3" />
+                                                  <span className={data.sell_profit >= 0 ? 'text-blue-600' : 'text-red-600'}>
+                                                    매도: {formatCurrency(data.sell_profit)}
+                                                  </span>
+                                                </div>
+                                              )}
+                                            </div>
+                                          </div>
+                                        ))}
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          ))}
         </div>
       </div>
     </div>

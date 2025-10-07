@@ -7,7 +7,8 @@ import type {
   CacheInfo,
   FilterOptions,
   TransactionList,
-  AccountsDetailed 
+  AccountsDetailed,
+  YearlyReturnsDetail
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000';
@@ -22,7 +23,7 @@ export const apiClient = axios.create({
 });
 
 // API 함수들
-export const portfolioApi = {
+export const api = {
   // CSV 업로드
   uploadCsv: async (file: File): Promise<SessionInfo> => {
     const formData = new FormData();
@@ -113,6 +114,12 @@ export const portfolioApi = {
   // 계좌별 상세 정보 조회
   getAccountsDetailed: async (sessionId: string): Promise<AccountsDetailed> => {
     const response = await apiClient.get(`/portfolio/accounts-detailed/${sessionId}`);
+    return response.data;
+  },
+
+  // 연도별 수익 내역 조회
+  getYearlyReturns: async (sessionId: string): Promise<YearlyReturnsDetail[]> => {
+    const response = await apiClient.get(`/returns/yearly/${sessionId}`);
     return response.data;
   },
 };

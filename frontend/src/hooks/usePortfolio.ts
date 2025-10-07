@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect } from 'react';
-import { portfolioApi } from '../api/client';
+import { api } from '../api/client';
 import type { 
   SessionInfo, 
   PortfolioSummary, 
@@ -28,7 +28,7 @@ export const usePortfolio = () => {
     setError(null);
     
     try {
-      const response = await portfolioApi.uploadCsv(file);
+      const response = await api.uploadCsv(file);
       
       // 백엔드가 단일 파서를 사용하므로 더미 세션 ID 생성
       const dummySessionId = 'current';
@@ -36,7 +36,7 @@ export const usePortfolio = () => {
       setSessionInfo({
         session_id: dummySessionId,
         message: response.message || 'CSV 파일이 업로드되었습니다.',
-        cache_size: response.file_size || 0,
+        cache_size: 0,
         total_sessions: 1
       });
       
@@ -58,9 +58,9 @@ export const usePortfolio = () => {
     try {
       // 병렬로 모든 데이터 로드
       const [summary, performance, risk] = await Promise.all([
-        portfolioApi.getPortfolioSummary(sessionId),
-        portfolioApi.getPortfolioPerformance(sessionId),
-        portfolioApi.getPortfolioRisk(sessionId),
+        api.getPortfolioSummary(sessionId),
+        api.getPortfolioPerformance(sessionId),
+        api.getPortfolioRisk(sessionId),
       ]);
       
       setPortfolioSummary(summary);
@@ -81,7 +81,7 @@ export const usePortfolio = () => {
       const checkExistingData = async () => {
         try {
           const dummySessionId = 'current';
-          const summary = await portfolioApi.getPortfolioSummary(dummySessionId);
+          const summary = await api.getPortfolioSummary(dummySessionId);
           
           if (summary) {
             // 기존 데이터가 있으면 자동으로 세션 설정
@@ -121,11 +121,11 @@ export const usePortfolio = () => {
       
       const [summary, performance] = await Promise.all([
         hasFilters 
-          ? portfolioApi.getFilteredPortfolioSummary(sessionId, filters)
-          : portfolioApi.getPortfolioSummary(sessionId),
+          ? api.getFilteredPortfolioSummary(sessionId, filters)
+          : api.getPortfolioSummary(sessionId),
         hasFilters 
-          ? portfolioApi.getFilteredPortfolioPerformance(sessionId, filters)
-          : portfolioApi.getPortfolioPerformance(sessionId),
+          ? api.getFilteredPortfolioPerformance(sessionId, filters)
+          : api.getPortfolioPerformance(sessionId),
       ]);
       
       setPortfolioSummary(summary);
@@ -144,7 +144,7 @@ export const usePortfolio = () => {
     setError(null);
     
     try {
-      const transactions = await portfolioApi.getAllTransactions(sessionId);
+      const transactions = await api.getAllTransactions(sessionId);
       setTransactionList(transactions);
     } catch (err) {
       setError(err instanceof Error ? err.message : '거래 내역 로드 중 오류가 발생했습니다.');
@@ -159,7 +159,7 @@ export const usePortfolio = () => {
     setError(null);
     
     try {
-      const accounts = await portfolioApi.getAccountsDetailed(sessionId);
+      const accounts = await api.getAccountsDetailed(sessionId);
       setAccountsDetailed(accounts);
     } catch (err) {
       setError(err instanceof Error ? err.message : '계좌별 상세 정보 로드 중 오류가 발생했습니다.');
@@ -171,7 +171,7 @@ export const usePortfolio = () => {
 
   const loadCacheInfo = useCallback(async () => {
     try {
-      const info = await portfolioApi.getCacheInfo();
+      const info = await api.getCacheInfo();
       setCacheInfo(info);
     } catch (err) {
       setError(err instanceof Error ? err.message : '캐시 정보 로드 중 오류가 발생했습니다.');
@@ -180,7 +180,7 @@ export const usePortfolio = () => {
 
   const clearCache = useCallback(async (targetSessionId?: string) => {
     try {
-      await portfolioApi.clearCache(targetSessionId);
+      await api.clearCache(targetSessionId);
       
       if (targetSessionId === sessionId || !targetSessionId) {
         // 현재 세션의 캐시를 삭제한 경우 상태 초기화

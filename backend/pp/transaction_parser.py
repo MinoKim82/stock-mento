@@ -66,6 +66,18 @@ class InterestInfo:
 
 
 @dataclass
+class YearlyReturnsDetail:
+    """연도별 수익 상세 정보"""
+    year: int
+    total_dividend: float
+    total_sell_profit: float
+    total_interest: float
+    total_returns: float
+    by_security: Dict[str, Dict[str, float]]  # {security: {dividend, sell_profit}}
+    by_owner_and_account: Dict[str, Dict[str, Dict[str, Dict[str, float]]]]  # {owner: {account_type: {security: {dividend, sell_profit}}}}
+
+
+@dataclass
 class TradingPeriodReturn:
     """거래 기간별 수익 정보"""
     account: str
@@ -695,3 +707,116 @@ class TransactionParser:
         }
         
         return summary
+    
+    def get_yearly_returns(self) -> List[YearlyReturnsDetail]:
+        """연도별 수익 내역 (배당금, 매도 차익, 이자)"""
+        df = self.get_dataframe()
+        
+        # 연도 추출
+        df['Year'] = pd.to_datetime(df['Date']).dt.year
+        
+        yearly_data = {}
+        
+        for year in sorted(df['Year'].unique()):
+            year_df = df[df['Year'] == year]
+            
+            # 배당금 계산
+            dividend_df = year_df[year_df['Type'] == 'Dividend']
+            total_dividend = dividend_df['Amount'].sum() if not dividend_df.empty else 0
+            
+            # 종목별 배당금
+            dividends_by_security = {}
+            # 소유자 및 계좌 타입별 배당금
+            by_owner_and_account = {}
+            
+            for _, row in dividend_df.iterrows():
+                if pd.notna(row['Security']) and pd.notna(row['Cash Account']):
+                    security = row['Security']
+                    account = row['Cash Account']
+                    amount = row['Amount'] if pd.notna(row['Amount']) else 0
+                    
+                    # 전체 종목별 집계
+                    if security not in dividends_by_security:
+                        dividends_by_security[security] = {'dividend': 0, 'sell_profit': 0}
+                    dividends_by_security[security]['dividend'] += amount
+                    
+                    # 계좌 정보 파싱
+                    account_parts = account.split()
+                    if len(account_parts) >= 2:
+                        owner = account_parts[0]
+                        account_type = account_parts[-1] if len(account_parts) > 1 else '기타'
+                        
+                        # 소유자별 그룹화
+                        if owner not in by_owner_and_account:
+                            by_owner_and_account[owner] = {}
+                        if account_type not in by_owner_and_account[owner]:
+                            by_owner_and_account[owner][account_type] = {}
+                        if security not in by_owner_and_account[owner][account_type]:
+                            by_owner_and_account[owner][account_type][security] = {'dividend': 0, 'sell_profit': 0}
+                        
+                        by_owner_and_account[owner][account_type][security]['dividend'] += amount
+            
+            # 매도 차익 계산
+            sell_df = year_df[year_df['Type'] == 'Sell']
+            total_sell_profit = 0
+            
+            for _, row in sell_df.iterrows():
+                if pd.notna(row['Security']) and pd.notna(row['Shares']) and pd.notna(row['Quote']) and pd.notna(row['Cash Account']):
+                    security = row['Security']
+                    account = row['Cash Account']
+                    shares = row['Shares']
+                    sell_price = row['Quote']
+                    
+                    # 평균 매입가 계산 (해당 시점까지의 매수 거래)
+                    buy_df = df[(df['Security'] == security) & 
+                               (df['Type'] == 'Buy') & 
+                               (df['Date'] <= row['Date'])]
+                    
+                    if not buy_df.empty:
+                        total_buy_cost = (buy_df['Shares'] * buy_df['Quote']).sum()
+                        total_buy_shares = buy_df['Shares'].sum()
+                        avg_buy_price = total_buy_cost / total_buy_shares if total_buy_shares > 0 else 0
+                        
+                        # 매도 차익 = (매도가 - 평균 매입가) * 매도 수량
+                        profit = (sell_price - avg_buy_price) * shares
+                        total_sell_profit += profit
+                        
+                        # 전체 종목별 집계
+                        if security not in dividends_by_security:
+                            dividends_by_security[security] = {'dividend': 0, 'sell_profit': 0}
+                        dividends_by_security[security]['sell_profit'] += profit
+                        
+                        # 계좌 정보 파싱
+                        account_parts = account.split()
+                        if len(account_parts) >= 2:
+                            owner = account_parts[0]
+                            account_type = account_parts[-1] if len(account_parts) > 1 else '기타'
+                            
+                            # 소유자별 그룹화
+                            if owner not in by_owner_and_account:
+                                by_owner_and_account[owner] = {}
+                            if account_type not in by_owner_and_account[owner]:
+                                by_owner_and_account[owner][account_type] = {}
+                            if security not in by_owner_and_account[owner][account_type]:
+                                by_owner_and_account[owner][account_type][security] = {'dividend': 0, 'sell_profit': 0}
+                            
+                            by_owner_and_account[owner][account_type][security]['sell_profit'] += profit
+            
+            # 이자 수익
+            interest_df = year_df[year_df['Type'] == 'Interest']
+            total_interest = interest_df['Amount'].sum() if not interest_df.empty else 0
+            
+            # 전체 수익
+            total_returns = total_dividend + total_sell_profit + total_interest
+            
+            yearly_data[year] = YearlyReturnsDetail(
+                year=int(year),
+                total_dividend=float(total_dividend),
+                total_sell_profit=float(total_sell_profit),
+                total_interest=float(total_interest),
+                total_returns=float(total_returns),
+                by_security=dividends_by_security,
+                by_owner_and_account=by_owner_and_account
+            )
+        
+        return list(yearly_data.values())

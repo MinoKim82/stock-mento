@@ -160,3 +160,27 @@ export interface AccountsDetailed {
     };
   };
 }
+
+export interface YearlyReturnsDetail {
+  year: number;
+  total_dividend: number;
+  total_sell_profit: number;
+  total_interest: number;
+  total_returns: number;
+  by_security: {
+    [security: string]: {
+      dividend: number;
+      sell_profit: number;
+    };
+  };
+  by_owner_and_account: {
+    [owner: string]: {
+      [accountType: string]: {
+        [security: string]: {
+          dividend: number;
+          sell_profit: number;
+        };
+      };
+    };
+  };
+}

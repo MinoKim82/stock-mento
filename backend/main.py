@@ -14,6 +14,7 @@ from pp import (
     StockHolding,
     DividendInfo,
     InterestInfo,
+    YearlyReturnsDetail,
     TradingPeriodReturn,
     AccountBalance,
     TotalBalance
@@ -162,6 +163,15 @@ class TotalBalanceResponse(BaseModel):
     total_stock_value: float
     total_balance: float
     account_count: int
+
+class YearlyReturnsDetailResponse(BaseModel):
+    year: int
+    total_dividend: float
+    total_sell_profit: float
+    total_interest: float
+    total_returns: float
+    by_security: Dict[str, Dict[str, float]]
+    by_owner_and_account: Dict[str, Dict[str, Dict[str, Dict[str, float]]]]
 
 # Yahoo API 응답 모델
 class StockPriceResponse(BaseModel):
@@ -991,6 +1001,27 @@ def should_include_account(account_info: Dict[str, str], owner: Optional[str], b
     if account_type and account_info["account_type"] != account_type:
         return False
     return True
+
+@app.get("/returns/yearly/{session_id}", response_model=List[YearlyReturnsDetailResponse])
+async def get_yearly_returns(session_id: str):
+    """연도별 수익 내역 조회 (배당금, 매도 차익, 이자)"""
+    try:
+        parser = get_parser(session_id)
+        yearly_returns = parser.get_yearly_returns()
+        
+        return [YearlyReturnsDetailResponse(
+            year=yr.year,
+            total_dividend=yr.total_dividend,
+            total_sell_profit=yr.total_sell_profit,
+            total_interest=yr.total_interest,
+            total_returns=yr.total_returns,
+            by_security=yr.by_security,
+            by_owner_and_account=yr.by_owner_and_account
+        ) for yr in yearly_returns]
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"연도별 수익 내역 조회 실패: {str(e)}")
 
 @app.on_event("startup")
 async def startup_event():

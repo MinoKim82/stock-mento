@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileText, Calendar, User, Building2, TrendingUp, TrendingDown, DollarSign } from 'lucide-react';
-import { portfolioApi } from '../api/client';
+import { api } from '../api/client';
 import type { Transaction } from '../types';
 
 interface TransactionHistoryProps {
@@ -22,7 +22,7 @@ const TransactionHistory: React.FC<TransactionHistoryProps> = ({ sessionId }) =>
     try {
       setIsLoading(true);
       setError(null);
-      const data = await portfolioApi.getAllTransactions(sessionId);
+      const data = await api.getAllTransactions(sessionId);
       setTransactions(data.transactions);
     } catch (err) {
       setError(err instanceof Error ? err.message : '거래 내역을 불러오는데 실패했습니다.');

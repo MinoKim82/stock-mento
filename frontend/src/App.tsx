@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect } from 'react';
 import { usePortfolio } from './hooks/usePortfolio';
 import FileUpload from './components/FileUpload';
 import { Tabs, Tab } from './components/Tabs';
@@ -6,28 +6,21 @@ import CompactPortfolioSummary from './components/CompactPortfolioSummary';
 import AccountPortfolio from './components/AccountPortfolio';
 import YearlyReturns from './components/YearlyReturns';
 import TransactionHistory from './components/TransactionHistory';
-import SessionInfo from './components/SessionInfo';
 import LlmChat from './components/LlmChat';
 import { AlertCircle, RefreshCw, BarChart3, PieChart, TrendingUp, FileText } from 'lucide-react';
 
 function App() {
   const {
     sessionId,
-    sessionInfo,
     portfolioSummary,
     portfolioPerformance,
-    portfolioRisk,
-    cacheInfo,
-    transactionList,
     accountsDetailed,
     isLoading,
     error,
     uploadCsv,
-    loadCacheInfo,
     clearCache,
     refreshData,
     clearError,
-    loadFilteredPortfolioData,
     loadTransactionList,
     loadAccountsDetailed,
   } = usePortfolio();
@@ -146,13 +139,14 @@ function App() {
                 </Tab>
                 
                 <Tab 
-                  label="현재 연도 수익" 
+                  label="수익" 
                   icon={<TrendingUp className="w-4 h-4" />}
                 >
                   {portfolioSummary && portfolioPerformance && (
                     <YearlyReturns 
                       portfolioSummary={portfolioSummary}
                       portfolioPerformance={portfolioPerformance}
+                      sessionId={sessionId}
                     />
                   )}
                 </Tab>
