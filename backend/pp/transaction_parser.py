@@ -280,6 +280,9 @@ class TransactionParser:
         """전체 주식 보유 목록"""
         df = self.get_dataframe()
         
+        # 날짜순으로 정렬 (오래된 거래부터 처리)
+        df = df.sort_values('Date', ascending=True)
+        
         holdings = {}
         
         # Buy와 Sell 거래를 통해 현재 보유량과 평균 가격 계산
@@ -297,24 +300,20 @@ class TransactionParser:
                         'security': security,
                         'account': account,
                         'shares': 0,
-                        'total_cost': 0.0,
-                        'buy_shares': 0,
-                        'sell_shares': 0
+                        'total_cost': 0.0
                     }
                 
                 if row['Type'] == 'Buy':
                     holdings[key]['shares'] += shares
                     holdings[key]['total_cost'] += shares * price
-                    holdings[key]['buy_shares'] += shares
                 elif row['Type'] == 'Sell':
-                    # 매도 시에는 평균 단가로 계산 (FIFO 방식)
+                    # 매도 시에는 평균 단가로 계산하여 원가 차감
+                    if holdings[key]['shares'] > 0:
+                        # 현재 평균 단가 계산
+                        current_avg_price = holdings[key]['total_cost'] / holdings[key]['shares']
+                        # 매도된 주식의 원가 차감
+                        holdings[key]['total_cost'] -= shares * current_avg_price
                     holdings[key]['shares'] -= shares
-                    holdings[key]['sell_shares'] += shares
-                    # 매도된 주식의 원가 차감
-                    if holdings[key]['buy_shares'] > 0:
-                        avg_price = holdings[key]['total_cost'] / holdings[key]['buy_shares']
-                        holdings[key]['total_cost'] -= shares * avg_price
-                        holdings[key]['buy_shares'] -= shares
         
         # 양수 보유량만 반환하고 평균 가격 계산
         result = []

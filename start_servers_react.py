@@ -30,7 +30,7 @@ def start_backend():
         kill_process_on_port(8000)
         time.sleep(2)
     
-    backend_path = os.path.join(os.path.dirname(__file__), 'backend', 'main_memory.py')
+    backend_path = os.path.join(os.path.dirname(__file__), 'backend', 'main.py')
     print(f"🔧 Backend 서버 시작: python {backend_path}")
     return subprocess.Popen([sys.executable, backend_path], preexec_fn=os.setsid)
 

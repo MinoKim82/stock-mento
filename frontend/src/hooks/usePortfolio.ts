@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { portfolioApi } from '../api/client';
 import type { 
   SessionInfo, 
@@ -21,6 +21,7 @@ export const usePortfolio = () => {
   const [accountsDetailed, setAccountsDetailed] = useState<AccountsDetailed | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   const uploadCsv = useCallback(async (file: File) => {
     setIsLoading(true);
@@ -28,11 +29,19 @@ export const usePortfolio = () => {
     
     try {
       const response = await portfolioApi.uploadCsv(file);
-      setSessionId(response.session_id);
-      setSessionInfo(response);
+      
+      // 백엔드가 단일 파서를 사용하므로 더미 세션 ID 생성
+      const dummySessionId = 'current';
+      setSessionId(dummySessionId);
+      setSessionInfo({
+        session_id: dummySessionId,
+        message: response.message || 'CSV 파일이 업로드되었습니다.',
+        cache_size: response.file_size || 0,
+        total_sessions: 1
+      });
       
       // 업로드 후 자동으로 포트폴리오 데이터 로드
-      await loadPortfolioData(response.session_id);
+      await loadPortfolioData(dummySessionId);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'CSV 업로드 중 오류가 발생했습니다.');
@@ -65,6 +74,39 @@ export const usePortfolio = () => {
       setIsLoading(false);
     }
   }, []);
+  
+  // 앱 시작 시 기존 CSV 파일이 있는지 확인
+  useEffect(() => {
+    if (!initialCheckDone) {
+      const checkExistingData = async () => {
+        try {
+          const dummySessionId = 'current';
+          const summary = await portfolioApi.getPortfolioSummary(dummySessionId);
+          
+          if (summary) {
+            // 기존 데이터가 있으면 자동으로 세션 설정
+            setSessionId(dummySessionId);
+            setSessionInfo({
+              session_id: dummySessionId,
+              message: '기존 CSV 파일이 로드되었습니다.',
+              cache_size: 0,
+              total_sessions: 1
+            });
+            
+            // 모든 데이터 로드
+            await loadPortfolioData(dummySessionId);
+          }
+        } catch (err) {
+          // 기존 데이터 없음 - 사용자에게 업로드 대기
+          console.log('No existing CSV file found. Please upload a CSV file.');
+        } finally {
+          setInitialCheckDone(true);
+        }
+      };
+      
+      checkExistingData();
+    }
+  }, [initialCheckDone, loadPortfolioData]);
 
   const loadFilteredPortfolioData = useCallback(async (
     sessionId: string, 
