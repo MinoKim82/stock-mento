@@ -1,2 +1,5 @@
 csv_data/
 *.log
+.env
+__pycache__/
+*.pyc
