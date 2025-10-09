@@ -12,20 +12,24 @@ from pp import (
     TransactionParser,
     AccountInfo,
     StockHolding,
+    AccountBalance,
     DividendInfo,
     InterestInfo,
-    YearlyReturnsDetail,
     TradingPeriodReturn,
-    AccountBalance,
-    TotalBalance
+    AccountBalanceDetail,
+    TotalBalance,
+    YearlyReturnsDetail
 )
 
 # Yahoo API 임포트
 try:
     from yahoo import get_yahoo_price_service
+    from yahoo.yahoo_client import YahooClient
     YAHOO_AVAILABLE = True
+    yahoo_client = YahooClient()
 except ImportError:
     YAHOO_AVAILABLE = False
+    yahoo_client = None
 
 app = FastAPI(title="Stock Portfolio API", version="1.0.0")
 
@@ -55,7 +59,7 @@ def load_existing_csv():
     if os.path.exists(CURRENT_CSV_FILE):
         try:
             print(f"기존 CSV 파일 로드 중: {CURRENT_CSV_FILE}")
-            current_parser = TransactionParser(CURRENT_CSV_FILE)
+            current_parser = TransactionParser(CURRENT_CSV_FILE, yahoo_client=yahoo_client)
             print(f"✅ CSV 파일 로드 완료")
         except Exception as e:
             print(f"⚠️ CSV 파일 로드 실패: {e}")
@@ -223,7 +227,7 @@ async def upload_csv(file: UploadFile = File(...)):
             f.write(csv_text)
         
         # TransactionParser 인스턴스 생성
-        current_parser = TransactionParser(CURRENT_CSV_FILE, enable_real_time_prices=True, use_yahoo=True)
+        current_parser = TransactionParser(CURRENT_CSV_FILE, yahoo_client=yahoo_client)
         
         return {
             "message": "CSV 파일이 성공적으로 업로드되고 로드되었습니다.",
@@ -236,47 +240,60 @@ async def upload_csv(file: UploadFile = File(...)):
 
 @app.get("/cache/info")
 async def get_cache_info():
-    """메모리 캐시 정보 조회"""
-    total_size = sum(len(content) for content in csv_cache.values())
-    return {
-        "total_sessions": len(csv_cache),
-        "total_cache_size": total_size,
-        "total_cache_size_mb": round(total_size / 1024 / 1024, 2),
-        "sessions": list(csv_cache.keys())
-    }
+    """현재 CSV 파일 정보 조회"""
+    if os.path.exists(CURRENT_CSV_FILE):
+        file_size = os.path.getsize(CURRENT_CSV_FILE)
+        return {
+            "total_sessions": 1,
+            "total_cache_size": file_size,
+            "total_cache_size_mb": round(file_size / 1024 / 1024, 2),
+            "sessions": ["current"],
+            "csv_file": CURRENT_CSV_FILE
+        }
+    else:
+        return {
+            "total_sessions": 0,
+            "total_cache_size": 0,
+            "total_cache_size_mb": 0.0,
+            "sessions": [],
+            "csv_file": None
+        }
 
 @app.delete("/cache/{session_id}")
 async def clear_session_cache(session_id: str):
-    """특정 세션의 캐시 삭제"""
-    if session_id not in csv_cache:
-        raise HTTPException(status_code=404, detail="세션을 찾을 수 없습니다.")
+    """현재 CSV 파일 삭제 (세션 ID는 무시됨 - 하위 호환성 유지)"""
+    global current_parser
     
-    # 임시 파일 삭제
-    temp_file_path = f"/tmp/{session_id}.csv"
-    if os.path.exists(temp_file_path):
-        os.remove(temp_file_path)
+    # 현재 파서 초기화
+    current_parser = None
     
-    del csv_cache[session_id]
-    if session_id in parsers:
-        del parsers[session_id]
+    # CSV 파일 삭제
+    if os.path.exists(CURRENT_CSV_FILE):
+        try:
+            os.remove(CURRENT_CSV_FILE)
+            return {"message": "CSV 파일이 삭제되었습니다. 새로운 파일을 업로드할 수 있습니다."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"파일 삭제 실패: {str(e)}")
     
-    return {"message": f"세션 {session_id}의 캐시가 삭제되었습니다."}
+    return {"message": "삭제할 CSV 파일이 없습니다."}
 
 @app.delete("/cache/clear")
 async def clear_all_cache():
-    """모든 캐시 삭제"""
-    session_count = len(csv_cache)
+    """현재 CSV 파일 삭제 (새로운 CSV 업로드 준비)"""
+    global current_parser
     
-    # 모든 임시 파일 삭제
-    for session_id in list(csv_cache.keys()):
-        temp_file_path = f"/tmp/{session_id}.csv"
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+    # 현재 파서 초기화
+    current_parser = None
     
-    csv_cache.clear()
-    parsers.clear()
+    # CSV 파일 삭제
+    if os.path.exists(CURRENT_CSV_FILE):
+        try:
+            os.remove(CURRENT_CSV_FILE)
+            return {"message": "CSV 파일이 삭제되었습니다. 새로운 파일을 업로드할 수 있습니다."}
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"파일 삭제 실패: {str(e)}")
     
-    return {"message": f"모든 캐시({session_count}개 세션)가 삭제되었습니다."}
+    return {"message": "삭제할 CSV 파일이 없습니다."}
 
 def get_parser(session_id: str = None) -> TransactionParser:
     """현재 TransactionParser 인스턴스를 가져옴 (session_id는 무시됨 - 하위 호환성 유지)"""

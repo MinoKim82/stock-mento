@@ -233,6 +233,7 @@ const AccountPortfolio: React.FC<AccountPortfolioProps> = ({ data }) => {
                                                 <th className="px-3 py-2 text-left text-xs font-medium text-gray-500 uppercase">종목명</th>
                                                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">보유수량</th>
                                                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">평단가</th>
+                                                <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">현재가</th>
                                                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">투자금</th>
                                                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">현재가치</th>
                                                 <th className="px-3 py-2 text-right text-xs font-medium text-gray-500 uppercase">손익</th>
@@ -249,6 +250,9 @@ const AccountPortfolio: React.FC<AccountPortfolioProps> = ({ data }) => {
                                                   </td>
                                                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                                                     {formatCurrency(holding.avg_price)}
+                                                  </td>
+                                                  <td className="px-3 py-2 whitespace-nowrap text-sm font-semibold text-blue-600 text-right">
+                                                    {holding.current_price > 0 ? formatCurrency(holding.current_price) : '-'}
                                                   </td>
                                                   <td className="px-3 py-2 whitespace-nowrap text-sm text-gray-900 text-right">
                                                     {formatCurrency(holding.total_cost)}

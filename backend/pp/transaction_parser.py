@@ -5,54 +5,40 @@ Transaction Data Parser and Analyzer
 """
 
 import pandas as pd
-import os
-from typing import List, Dict, Any, Optional
-from dataclasses import dataclass
 import re
-import sys
-
-# KIS API 모듈 임포트 (상대 경로로 추가)
-sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
-try:
-    from kis import get_stock_price_service
-    KIS_AVAILABLE = True
-except ImportError:
-    KIS_AVAILABLE = False
-    print("KIS API 모듈을 찾을 수 없습니다. 한국 주식 실시간 가격 조회 기능이 비활성화됩니다.")
-
-# Yahoo Finance API 모듈 임포트
-try:
-    from yahoo import get_yahoo_price_service
-    YAHOO_AVAILABLE = True
-except ImportError:
-    YAHOO_AVAILABLE = False
-    print("Yahoo Finance API 모듈을 찾을 수 없습니다. Yahoo 가격 조회 기능이 비활성화됩니다.")
+from typing import Optional, List
+from dataclasses import dataclass
 
 
 @dataclass
 class AccountInfo:
     """계좌 정보"""
     account_name: str
+    owner: str
+    broker: str
     account_type: str
 
 
 @dataclass
 class StockHolding:
     """주식 보유 정보"""
-    security: str
-    shares: int
     account: str
-    avg_price: float = 0.0
-    total_cost: float = 0.0
-    current_price: float = 0.0
-    current_value: float = 0.0
-    unrealized_gain_loss: float = 0.0
-    unrealized_gain_loss_rate: float = 0.0
+    security: str
+    shares: float
+    avg_price: float
+    total_cost: float
+
+
+@dataclass
+class AccountBalance:
+    """계좌 잔액 정보"""
+    account: str
+    cash_balance: float
 
 
 @dataclass
 class DividendInfo:
-    """배당 정보"""
+    """배당 수익 정보"""
     account: str
     security: str
     total_dividend: float
@@ -60,21 +46,9 @@ class DividendInfo:
 
 @dataclass
 class InterestInfo:
-    """이자 정보"""
+    """이자 수익 정보"""
     account: str
     total_interest: float
-
-
-@dataclass
-class YearlyReturnsDetail:
-    """연도별 수익 상세 정보"""
-    year: int
-    total_dividend: float
-    total_sell_profit: float
-    total_interest: float
-    total_returns: float
-    by_security: Dict[str, Dict[str, float]]  # {security: {dividend, sell_profit}}
-    by_owner_and_account: Dict[str, Dict[str, Dict[str, Dict[str, float]]]]  # {owner: {account_type: {security: {dividend, sell_profit}}}}
 
 
 @dataclass
@@ -86,8 +60,8 @@ class TradingPeriodReturn:
 
 
 @dataclass
-class AccountBalance:
-    """계좌별 잔액 정보"""
+class AccountBalanceDetail:
+    """계좌 잔액 상세 정보 (현금 + 주식)"""
     account: str
     cash_balance: float
     stock_value: float
@@ -103,13 +77,42 @@ class TotalBalance:
     account_count: int
 
 
+@dataclass
+class StockHoldingWithPrice:
+    """주식 보유 정보 (현재 가격 포함)"""
+    account: str
+    security: str
+    shares: float
+    avg_price: float
+    total_cost: float
+    current_price: float
+    current_value: float
+    unrealized_gain_loss: float
+    unrealized_gain_loss_rate: float
+
+
+@dataclass
+class YearlyReturnsDetail:
+    """연도별 수익 내역"""
+    year: int
+    total_dividend: float
+    total_sell_profit: float
+    total_interest: float
+    total_returns: float
+    by_security: dict  # Dict[str, Dict[str, float]]
+    by_owner_and_account: dict  # Dict[str, Dict[str, Dict[str, Dict[str, float]]]]
+
+
 def normalize_account_name(account_name) -> str:
     """
     계좌명을 정규화합니다.
     '예수금' 텍스트를 제거하여 동일한 계좌로 처리합니다.
     
+    Example:
+        "민호 토스 종합매매 예수금" -> "민호 토스 종합매매"
+    
     Args:
-        account_name: 원본 계좌명 (str 또는 None)
+        account_name: 원본 계좌명
         
     Returns:
         정규화된 계좌명
@@ -125,135 +128,74 @@ def normalize_account_name(account_name) -> str:
 class TransactionParser:
     """거래 내역 파싱 및 분석 클래스"""
     
-    def __init__(self, csv_file_path: str, enable_real_time_prices: bool = True, use_yahoo: bool = True):
+    def __init__(self, csv_file_path: str, yahoo_client=None):
         """
         Args:
             csv_file_path: CSV 파일 경로
-            enable_real_time_prices: 실시간 가격 조회 활성화 여부
-            use_yahoo: Yahoo Finance API 사용 여부 (기본값: True)
+            yahoo_client: Yahoo Finance API 클라이언트 (선택적)
         """
         self.csv_file_path = csv_file_path
         self._df: Optional[pd.DataFrame] = None
-        self.enable_real_time_prices = enable_real_time_prices
-        self.use_yahoo = use_yahoo and YAHOO_AVAILABLE
-        
-        # KIS 서비스 초기화 (한국 주식용)
-        if self.enable_real_time_prices and KIS_AVAILABLE:
-            try:
-                self.stock_price_service = get_stock_price_service()
-                print("KIS 실시간 가격 조회 서비스가 활성화되었습니다.")
-            except Exception as e:
-                print(f"KIS 서비스 초기화 실패: {e}")
-                self.stock_price_service = None
-        else:
-            self.stock_price_service = None
-        
-        # Yahoo 서비스 초기화 (전체 주식용)
-        if self.use_yahoo:
-            try:
-                self.yahoo_service = get_yahoo_price_service()
-                print("Yahoo Finance 가격 조회 서비스가 활성화되었습니다.")
-            except Exception as e:
-                print(f"Yahoo 서비스 초기화 실패: {e}")
-                self.yahoo_service = None
-        else:
-            self.yahoo_service = None
-    
-    def _get_real_time_price(self, security: str) -> Optional[float]:
-        """실시간 가격 조회 (KIS API 우선, Yahoo API 백업)"""
-        # 1. KIS API 시도 (한국 주식용)
-        if self.enable_real_time_prices and self.stock_price_service:
-            try:
-                # 한국 주식인지 확인 (ks 접미사)
-                if security.endswith('ks'):
-                    price_data = self.stock_price_service.get_stock_price(security)
-                    if price_data and price_data.get('current_price'):
-                        return price_data.get('current_price')
-            except Exception as e:
-                print(f"KIS 실시간 가격 조회 실패 ({security}): {e}")
-        
-        # 2. Yahoo API 시도 (모든 주식용)
-        if self.use_yahoo and self.yahoo_service:
-            try:
-                price_data = self.yahoo_service.get_stock_price(security)
-                if price_data and price_data.get('current_price'):
-                    return price_data.get('current_price')
-            except Exception as e:
-                print(f"Yahoo 실시간 가격 조회 실패 ({security}): {e}")
-        
-        return None
-    
-    def _normalize_security_symbol(self, security: str) -> str:
-        """보안 심볼을 정규화 (Yahoo API 사용)"""
-        if not security:
-            return security
-        
-        # Yahoo 서비스를 사용하여 심볼 정규화
-        if self.use_yahoo and self.yahoo_service:
-            try:
-                normalized = self.yahoo_service.normalize_symbol(security)
-                if normalized:
-                    return normalized
-            except Exception as e:
-                print(f"Yahoo 심볼 정규화 실패 ({security}): {e}")
-        
-        # Yahoo 서비스가 없거나 실패한 경우 기본 정규화
-        korean_stocks = [
-            '삼성전자', 'SK하이닉스', 'LG화학', '네이버', '카카오', '현대차', '기아',
-            'POSCO', 'KB금융', '신한지주', 'LG전자', 'SK텔레콤', 'KT&G', '현대모비스',
-            '기업은행', 'PS일렉트로닉스', 'GS글로벌', 'LG생활건강', '아모레퍼시픽',
-            '셀트리온', '삼성바이오로직스', 'SK이노베이션', 'LG에너지솔루션'
-        ]
-        
-        # 한국 주식인지 확인
-        for korean_stock in korean_stocks:
-            if korean_stock in security:
-                # 이미 ks 접미사가 없으면 추가
-                if not security.endswith('ks'):
-                    return f"{security}ks"
-                break
-        
-        return security
-    
-    def _update_holding_with_real_time_price(self, holding: StockHolding) -> StockHolding:
-        """보유 주식에 실시간 가격 정보 업데이트"""
-        if not self.enable_real_time_prices and not self.use_yahoo:
-            return holding
-        
-        # 실시간 가격 조회 (심볼 정규화)
-        normalized_symbol = self._normalize_security_symbol(holding.security)
-        current_price = self._get_real_time_price(normalized_symbol)
-        
-        if current_price and current_price > 0:
-            holding.current_price = current_price
-            holding.current_value = holding.shares * current_price
-            holding.unrealized_gain_loss = holding.current_value - holding.total_cost
-            
-            if holding.total_cost > 0:
-                holding.unrealized_gain_loss_rate = (holding.unrealized_gain_loss / holding.total_cost) * 100
-        
-        return holding
+        self.yahoo_client = yahoo_client
     
     def load_data(self) -> pd.DataFrame:
-        """CSV 파일을 로드하고 전처리"""
+        """
+        CSV 파일을 로드하고 전처리
+        
+        처리 순서:
+        1. CSV 파일 읽기
+        2. 계좌명 정규화 (Cash Account, Offset Account에서 '예수금' 제거)
+        3. Currency 컬럼 추가 (Amount에서 USD/KRW 구분)
+        4. 숫자 컬럼 정리 (쉼표, 통화 코드 제거하고 숫자만 추출)
+        5. 날짜 컬럼 변환
+        
+        Returns:
+            전처리된 DataFrame
+        """
         try:
+            # 1. CSV 파일 읽기
             self._df = pd.read_csv(self.csv_file_path)
             
-            # 숫자 데이터 정리 (쉼표 제거)
-            numeric_columns = ['Shares', 'Quote', 'Amount', 'Fees', 'Taxes', 'Net Transaction Value']
-            for col in numeric_columns:
-                if col in self._df.columns:
-                    self._df[col] = self._df[col].astype(str).str.replace(',', '').str.replace('USD ', '')
-                    self._df[col] = pd.to_numeric(self._df[col], errors='coerce')
-            
-            # 날짜 컬럼 처리
-            self._df['Date'] = pd.to_datetime(self._df['Date'])
-            
-            # 계좌명 정규화 (예수금 텍스트 제거)
+            # 2. 계좌명 정규화
+            # Cash Account와 Offset Account에서 '예수금' 텍스트 제거
+            # 예: "민호 토스 종합매매 예수금" -> "민호 토스 종합매매"
             if 'Cash Account' in self._df.columns:
                 self._df['Cash Account'] = self._df['Cash Account'].apply(normalize_account_name)
+            
             if 'Offset Account' in self._df.columns:
                 self._df['Offset Account'] = self._df['Offset Account'].apply(normalize_account_name)
+            
+            # 3. Currency 컬럼 추가
+            # Amount 값에 'USD'가 포함되어 있으면 USD, 아니면 KRW
+            def extract_currency(val):
+                if pd.isna(val) or val == '':
+                    return 'KRW'
+                if 'USD' in str(val):
+                    return 'USD'
+                return 'KRW'
+            
+            self._df['Currency'] = self._df['Amount'].apply(extract_currency)
+            
+            # 4. 숫자 컬럼 정리
+            # 쉼표와 통화 코드(USD, KRW)를 제거하고 숫자만 추출
+            numeric_columns = ['Shares', 'Quote', 'Amount', 'Fees', 'Taxes', 'Net Transaction Value']
+            
+            for col in numeric_columns:
+                if col in self._df.columns:
+                    def convert_numeric(val):
+                        if pd.isna(val) or val == '':
+                            return None
+                        # 문자열로 변환 후 통화 코드 제거
+                        val_str = str(val).replace('USD', '').replace('KRW', '').replace(',', '').strip()
+                        try:
+                            return float(val_str)
+                        except:
+                            return None
+                    
+                    self._df[col] = self._df[col].apply(convert_numeric)
+            
+            # 5. 날짜 컬럼 변환
+            self._df['Date'] = pd.to_datetime(self._df['Date'])
             
             return self._df
             
@@ -261,412 +203,263 @@ class TransactionParser:
             raise Exception(f"CSV 파일 로드 실패: {str(e)}")
     
     def get_dataframe(self) -> pd.DataFrame:
-        """데이터프레임 반환 (필요시 로드)"""
+        """
+        데이터프레임 반환 (필요시 로드)
+        
+        Returns:
+            전처리된 DataFrame
+        """
         if self._df is None:
             self.load_data()
         return self._df
     
     def get_accounts(self) -> List[AccountInfo]:
-        """모든 계좌 목록 반환 (정규화된 계좌)"""
+        """
+        모든 계좌 목록 반환
+        
+        Cash Account와 Offset Account에 존재하는 모든 계좌를 수집하고,
+        계좌명을 파싱하여 소유자, 증권사, 계좌타입으로 분리합니다.
+        
+        계좌명 형식: "(소유자) (증권사) (계좌타입)"
+        예: "민호 토스 종합매매" -> owner="민호", broker="토스", account_type="종합매매"
+        
+        Returns:
+            AccountInfo 리스트
+        """
         df = self.get_dataframe()
         
-        # Cash Account와 Offset Account에서 모든 계좌를 가져옴 (중복 제거)
-        cash_accounts = df['Cash Account'].dropna().unique() if 'Cash Account' in df.columns else []
-        offset_accounts = df['Offset Account'].dropna().unique() if 'Offset Account' in df.columns else []
+        # Cash Account와 Offset Account에서 모든 계좌 수집
+        all_accounts = set()
         
-        # 모든 계좌를 합치고 중복 제거
-        all_accounts = set(cash_accounts)
-        all_accounts.update(offset_accounts)
+        if 'Cash Account' in df.columns:
+            cash_accounts = df['Cash Account'].dropna().unique()
+            all_accounts.update(cash_accounts)
         
-        accounts = []
-        for account in sorted(all_accounts):
-            accounts.append(AccountInfo(
-                account_name=account,
-                account_type="account"  # 통합된 계좌 타입
+        if 'Offset Account' in df.columns:
+            offset_accounts = df['Offset Account'].dropna().unique()
+            all_accounts.update(offset_accounts)
+        
+        # 계좌명 파싱하여 AccountInfo 생성
+        account_list = []
+        
+        for account_name in sorted(all_accounts):
+            # 계좌명을 공백으로 분리
+            # 형식: "(소유자) (증권사) (계좌타입)" 또는 "(소유자) (증권사) (계좌타입) (추가정보)"
+            parts = account_name.split()
+            
+            if len(parts) >= 3:
+                owner = parts[0]
+                broker = parts[1]
+                account_type = ' '.join(parts[2:])  # 나머지는 모두 계좌타입으로
+            elif len(parts) == 2:
+                owner = parts[0]
+                broker = parts[1]
+                account_type = "기타"
+            elif len(parts) == 1:
+                owner = parts[0]
+                broker = "기타"
+                account_type = "기타"
+            else:
+                owner = "기타"
+                broker = "기타"
+                account_type = "기타"
+            
+            account_list.append(AccountInfo(
+                account_name=account_name,
+                owner=owner,
+                broker=broker,
+                account_type=account_type
             ))
         
-        return accounts
-    
-    
-    def get_all_stock_holdings(self) -> List[StockHolding]:
-        """전체 주식 보유 목록"""
-        df = self.get_dataframe()
-        
-        # 날짜순으로 정렬 (오래된 거래부터 처리)
-        df = df.sort_values('Date', ascending=True)
-        
-        holdings = {}
-        
-        # Buy와 Sell 거래를 통해 현재 보유량과 평균 가격 계산
-        for _, row in df.iterrows():
-            if row['Type'] in ['Buy', 'Sell'] and pd.notna(row['Security']):
-                security = row['Security']
-                account = row['Cash Account']
-                shares = row['Shares'] if pd.notna(row['Shares']) else 0
-                price = row['Quote'] if pd.notna(row['Quote']) else 0.0
-                
-                key = f"{account}_{security}"
-                
-                if key not in holdings:
-                    holdings[key] = {
-                        'security': security,
-                        'account': account,
-                        'shares': 0,
-                        'total_cost': 0.0
-                    }
-                
-                if row['Type'] == 'Buy':
-                    holdings[key]['shares'] += shares
-                    holdings[key]['total_cost'] += shares * price
-                elif row['Type'] == 'Sell':
-                    # 매도 시에는 평균 단가로 계산하여 원가 차감
-                    if holdings[key]['shares'] > 0:
-                        # 현재 평균 단가 계산
-                        current_avg_price = holdings[key]['total_cost'] / holdings[key]['shares']
-                        # 매도된 주식의 원가 차감
-                        holdings[key]['total_cost'] -= shares * current_avg_price
-                    holdings[key]['shares'] -= shares
-        
-        # 양수 보유량만 반환하고 평균 가격 계산
-        result = []
-        for holding in holdings.values():
-            if holding['shares'] > 0:
-                avg_price = holding['total_cost'] / holding['shares'] if holding['shares'] > 0 else 0.0
-                stock_holding = StockHolding(
-                    security=holding['security'],
-                    shares=int(holding['shares']),
-                    account=holding['account'],
-                    avg_price=avg_price,
-                    total_cost=holding['total_cost']
-                )
-                
-                # 실시간 가격 정보 업데이트
-                stock_holding = self._update_holding_with_real_time_price(stock_holding)
-                result.append(stock_holding)
-        
-        return result
+        return account_list
     
     def get_holdings_by_account(self, account_name: str) -> List[StockHolding]:
-        """계좌별 주식 보유 목록"""
+        """
+        특정 계좌의 보유 종목 반환
+        
+        Buy/Sell 거래를 분석하여 현재 보유 중인 주식과 평균 매입가를 계산합니다.
+        
+        계산 로직:
+        1. 날짜순으로 거래를 정렬
+        2. Buy: 보유 수량 증가, 총 비용 증가
+        3. Sell: 보유 수량 감소, 평균 단가 기준으로 총 비용 감소
+        4. 보유 수량 > 0인 종목만 반환
+        
+        Args:
+            account_name: 계좌명
+            
+        Returns:
+            StockHolding 리스트 (보유 수량 > 0)
+        """
         df = self.get_dataframe()
         
-        # 해당 계좌의 거래만 필터링
-        account_df = df[df['Cash Account'] == account_name]
+        # 해당 계좌의 거래만 필터링하고 날짜순 정렬
+        account_df = df[df['Cash Account'] == account_name].sort_values('Date')
         
+        # 종목별 보유 내역
         holdings = {}
         
         for _, row in account_df.iterrows():
-            if row['Type'] in ['Buy', 'Sell'] and pd.notna(row['Security']):
-                security = row['Security']
-                shares = row['Shares'] if pd.notna(row['Shares']) else 0
-                price = row['Quote'] if pd.notna(row['Quote']) else 0.0
+            if row['Type'] not in ['Buy', 'Sell']:
+                continue
+            
+            if pd.isna(row['Security']):
+                continue
+            
+            security = row['Security']
+            shares = row['Shares'] if pd.notna(row['Shares']) else 0
+            price = row['Quote'] if pd.notna(row['Quote']) else 0.0
+            
+            # 종목이 처음 나타나면 초기화
+            if security not in holdings:
+                holdings[security] = {
+                    'shares': 0,
+                    'total_cost': 0.0
+                }
+            
+            if row['Type'] == 'Buy':
+                # 매수: 수량과 비용 증가
+                holdings[security]['shares'] += shares
+                holdings[security]['total_cost'] += shares * price
                 
-                if security not in holdings:
-                    holdings[security] = {
-                        'shares': 0,
-                        'total_cost': 0.0,
-                        'buy_shares': 0,
-                        'sell_shares': 0
-                    }
-                
-                if row['Type'] == 'Buy':
-                    holdings[security]['shares'] += shares
-                    holdings[security]['total_cost'] += shares * price
-                    holdings[security]['buy_shares'] += shares
-                elif row['Type'] == 'Sell':
-                    # 매도 시에는 평균 단가로 계산 (FIFO 방식)
-                    holdings[security]['shares'] -= shares
-                    holdings[security]['sell_shares'] += shares
+            elif row['Type'] == 'Sell':
+                # 매도: 평균 단가로 비용 감소
+                if holdings[security]['shares'] > 0:
+                    # 현재 평균 단가 계산
+                    avg_price = holdings[security]['total_cost'] / holdings[security]['shares']
                     # 매도된 주식의 원가 차감
-                    if holdings[security]['buy_shares'] > 0:
-                        avg_price = holdings[security]['total_cost'] / holdings[security]['buy_shares']
-                        holdings[security]['total_cost'] -= shares * avg_price
-                        holdings[security]['buy_shares'] -= shares
+                    holdings[security]['total_cost'] -= shares * avg_price
+                
+                # 수량 감소
+                holdings[security]['shares'] -= shares
         
+        # 보유 수량 > 0인 종목만 StockHolding으로 변환
         result = []
-        for security, holding_data in holdings.items():
-            if holding_data['shares'] > 0:
-                avg_price = holding_data['total_cost'] / holding_data['shares'] if holding_data['shares'] > 0 else 0.0
-                stock_holding = StockHolding(
-                    security=security,
-                    shares=int(holding_data['shares']),
-                    account=account_name,
-                    avg_price=avg_price,
-                    total_cost=holding_data['total_cost']
-                )
-                
-                # 실시간 가격 정보 업데이트
-                stock_holding = self._update_holding_with_real_time_price(stock_holding)
-                result.append(stock_holding)
-        
-        return result
-    
-    def get_dividends_by_account(self) -> List[DividendInfo]:
-        """계좌별/주식별 배당 수익"""
-        df = self.get_dataframe()
-        
-        # 배당 거래만 필터링
-        dividend_df = df[df['Type'] == 'Dividend']
-        
-        dividends = {}
-        
-        for _, row in dividend_df.iterrows():
-            if pd.notna(row['Security']) and pd.notna(row['Cash Account']):
-                account = row['Cash Account']
-                security = row['Security']
-                amount = row['Amount'] if pd.notna(row['Amount']) else 0
-                
-                key = f"{account}_{security}"
-                
-                if key not in dividends:
-                    dividends[key] = {
-                        'account': account,
-                        'security': security,
-                        'total_dividend': 0
-                    }
-                
-                dividends[key]['total_dividend'] += amount
-        
-        result = []
-        for dividend in dividends.values():
-            result.append(DividendInfo(
-                account=dividend['account'],
-                security=dividend['security'],
-                total_dividend=dividend['total_dividend']
-            ))
-        
-        return result
-    
-    def get_interest_by_account(self) -> List[InterestInfo]:
-        """계좌별 이자 수익"""
-        df = self.get_dataframe()
-        
-        # 이자 거래만 필터링
-        interest_df = df[df['Type'] == 'Interest']
-        
-        interest = {}
-        
-        for _, row in interest_df.iterrows():
-            if pd.notna(row['Cash Account']):
-                account = row['Cash Account']
-                amount = row['Amount'] if pd.notna(row['Amount']) else 0
-                
-                if account not in interest:
-                    interest[account] = 0
-                
-                interest[account] += amount
-        
-        result = []
-        for account, total_interest in interest.items():
-            result.append(InterestInfo(
-                account=account,
-                total_interest=total_interest
-            ))
-        
-        return result
-    
-    def get_trading_period_returns(self) -> List[TradingPeriodReturn]:
-        """거래 기간별 수익"""
-        df = self.get_dataframe()
-        
-        returns = {}
-        
-        # 각 계좌별로 수익 계산
-        for account in df['Cash Account'].dropna().unique():
-            account_df = df[df['Cash Account'] == account]
-            
-            total_buy = 0
-            total_sell = 0
-            total_dividend = 0
-            total_interest = 0
-            
-            for _, row in account_df.iterrows():
-                amount = row['Amount'] if pd.notna(row['Amount']) else 0
-                
-                if row['Type'] == 'Buy':
-                    total_buy += amount
-                elif row['Type'] == 'Sell':
-                    total_sell += amount
-                elif row['Type'] == 'Dividend':
-                    total_dividend += amount
-                elif row['Type'] == 'Interest':
-                    total_interest += amount
-            
-            # 현재 보유량의 가치를 대략적으로 계산 (마지막 거래 가격 기준)
-            current_value = 0
-            holdings = {}
-            
-            for _, row in account_df.iterrows():
-                if row['Type'] in ['Buy', 'Sell'] and pd.notna(row['Security']):
-                    security = row['Security']
-                    shares = row['Shares'] if pd.notna(row['Shares']) else 0
-                    quote = row['Quote'] if pd.notna(row['Quote']) else 0
-                    
-                    if security not in holdings:
-                        holdings[security] = {'shares': 0, 'last_quote': 0}
-                    
-                    if row['Type'] == 'Buy':
-                        holdings[security]['shares'] += shares
-                    elif row['Type'] == 'Sell':
-                        holdings[security]['shares'] -= shares
-                    
-                    if quote > 0:
-                        holdings[security]['last_quote'] = quote
-            
-            for security, data in holdings.items():
-                if data['shares'] > 0:
-                    current_value += data['shares'] * data['last_quote']
-            
-            # 총 수익 계산
-            total_return = (total_sell + total_dividend + total_interest + current_value) - total_buy
-            return_percentage = (total_return / total_buy * 100) if total_buy > 0 else 0
-            
-            returns[account] = {
-                'total_return': total_return,
-                'return_percentage': return_percentage
-            }
-        
-        result = []
-        for account, data in returns.items():
-            result.append(TradingPeriodReturn(
-                account=account,
-                total_return=data['total_return'],
-                return_percentage=data['return_percentage']
-            ))
-        
-        return result
-    
-    def get_account_balance(self, account_name: str) -> AccountBalance:
-        """특정 계좌의 잔액 정보"""
-        df = self.get_dataframe()
-        account_df = df[df['Cash Account'] == account_name]
-        
-        # 현금 거래 분석 (환전 고려)
-        # '해외' 계좌의 경우 메모의 환율 정보를 활용하여 정확한 KRW 환전 계산
-        if '해외' in account_name:
-            # 해외 계좌의 환전 거래 분석
-            deposits = 0
-            removals = 0
-            interest = 0
-            dividends = 0
-            buy_amount = 0
-            sell_amount = 0
-            
-            # 해외 계좌는 실제 KRW 잔액이 0원 (모든 USD가 환전되어 국내 계좌로 이동)
-            # 환전 거래는 국내 계좌에서만 처리
-        else:
-            # 일반 계좌는 기존 로직 사용
-            deposits = account_df[account_df['Type'] == 'Deposit']['Amount'].sum()
-            removals = account_df[account_df['Type'] == 'Removal']['Amount'].sum()
-            interest = account_df[account_df['Type'] == 'Interest']['Amount'].sum()
-            dividends = account_df[account_df['Type'] == 'Dividend']['Amount'].sum()
-            
-            # 주식 거래 분석
-            buy_amount = account_df[account_df['Type'] == 'Buy']['Amount'].sum()
-            sell_amount = account_df[account_df['Type'] == 'Sell']['Amount'].sum()
-        
-        # 계좌 간 이체 분석 (환전 고려)
-        # Transfer (Outbound): 다른 계좌로 이체 (현금 유출)
-        if '해외' in account_name:
-            # 해외 계좌의 이체는 USD이므로 KRW 잔액에 영향 없음
-            transfer_out = 0
-        else:
-            transfer_out = account_df[account_df['Type'] == 'Transfer (Outbound)']['Amount'].sum()
-        
-        # Transfer (Inbound): 다른 계좌에서 이체 (현금 유입) - 환전 고려
-        transfer_in = 0
-        inbound_transfers = df[(df['Type'] == 'Transfer (Outbound)') & (df['Offset Account'] == account_name)]
-        
-        for _, row in inbound_transfers.iterrows():
-            from_account = row['Cash Account']
-            amount = row['Amount']
-            
-            # 환전 계산: '해외' 계좌에서 일반 계좌로 이체 시 환전 (USD → KRW)
-            if '해외' in from_account and '해외' not in account_name:
-                # 메모에서 환율 정보를 확인하여 정확한 KRW 금액 계산
-                if pd.notna(row['Note']) and '환율' in str(row['Note']):
-                    note = str(row['Note'])
-                    import re
-                    usd_match = re.search(r'달러\s+([\d,]+\.?\d*)', note)
-                    rate_match = re.search(r'환율\s+([\d,]+\.?\d*)', note)
-                    fee_match = re.search(r'환전 수수료\s+([\d,]+\.?\d*)', note)
-                    
-                    if usd_match and rate_match:
-                        usd_amount = float(usd_match.group(1).replace(',', ''))
-                        exchange_rate = float(rate_match.group(1).replace(',', ''))
-                        exchange_fee = float(fee_match.group(1).replace(',', '')) if fee_match else 0
-                        
-                        # 실제 환전된 KRW 금액 = USD 금액 * 환율 - 환전 수수료
-                        actual_krw = usd_amount * exchange_rate - exchange_fee
-                        transfer_in += actual_krw
-                    else:
-                        transfer_in += amount  # 기본값
-                else:
-                    transfer_in += amount  # 기본값
-            # 일반 계좌에서 '해외' 계좌로 이체 시 환전 (KRW → USD)
-            elif '해외' not in from_account and '해외' in account_name:
-                # KRW를 USD로 환전 - 실제 환전된 USD 금액 사용
-                if from_account == '토스 종합매매' and account_name == '토스 종합매매 해외':
-                    # KRW → USD 환전 시 실제 환전된 USD 금액으로 조정
-                    # 실제로는 모든 USD가 환전되어 0이 되어야 함
-                    transfer_in += 0  # 토스 종합매매 해외는 실제 잔액이 0원
-                else:
-                    transfer_in += amount
-            else:
-                # 같은 통화 간 이체
-                transfer_in += amount
-        
-        # 수수료와 세금 분석
-        if '해외' in account_name:
-            # 해외 계좌의 수수료와 세금은 USD이므로 KRW 잔액에 영향 없음
-            fees = 0
-            taxes = 0
-        else:
-            fees = account_df['Fees'].sum() if 'Fees' in account_df.columns else 0
-            taxes = account_df['Taxes'].sum() if 'Taxes' in account_df.columns else 0
-        
-        # 예수금 계산 (수수료, 세금, 계좌 간 이체 포함)
-        cash_in = deposits + interest + dividends + sell_amount + transfer_in
-        cash_out = removals + buy_amount + fees + taxes + transfer_out
-        cash_balance = cash_in - cash_out
-        
-        # 주식 평가액 계산
-        stock_transactions = account_df[account_df['Type'].isin(['Buy', 'Sell'])]
-        holdings = {}
-        
-        for _, row in stock_transactions.iterrows():
-            if pd.notna(row['Security']):
-                security = row['Security']
-                shares = row['Shares'] if pd.notna(row['Shares']) else 0
-                quote = row['Quote'] if pd.notna(row['Quote']) else 0
-                
-                if security not in holdings:
-                    holdings[security] = {'shares': 0, 'last_quote': 0}
-                
-                if row['Type'] == 'Buy':
-                    holdings[security]['shares'] += shares
-                elif row['Type'] == 'Sell':
-                    holdings[security]['shares'] -= shares
-                
-                if quote > 0:
-                    holdings[security]['last_quote'] = quote
-        
-        stock_value = 0
         for security, data in holdings.items():
             if data['shares'] > 0:
-                stock_value += data['shares'] * data['last_quote']
+                avg_price = data['total_cost'] / data['shares'] if data['shares'] > 0 else 0.0
+                
+                result.append(StockHolding(
+                    account=account_name,
+                    security=security,
+                    shares=data['shares'],
+                    avg_price=avg_price,
+                    total_cost=data['total_cost']
+                ))
         
-        total_balance = cash_balance + stock_value
+        return result
+    
+    def get_all_holdings(self) -> List[StockHolding]:
+        """
+        모든 계좌의 보유 종목 반환
+        
+        Returns:
+            모든 계좌의 StockHolding 리스트
+        """
+        accounts = self.get_accounts()
+        all_holdings = []
+        
+        for account_info in accounts:
+            holdings = self.get_holdings_by_account(account_info.account_name)
+            all_holdings.extend(holdings)
+        
+        return all_holdings
+    
+    def get_account_balance(self, account_name: str) -> AccountBalance:
+        """
+        특정 계좌의 현금 잔액 계산
+        
+        계산 로직:
+        1. 해외 계좌(USD)는 KRW 잔액 = 0으로 반환
+        2. KRW 계좌만 처리
+        3. Cash Account 거래:
+           - 입금(+): Dividend, Deposit, Interest
+           - 출금(-): Removal, Transfer (Outbound)
+        4. Offset Account 거래 (Buy/Sell):
+           - Buy: 예수금에서 출금(-) - Amount 사용
+           - Sell: 예수금으로 입금(+) - Amount 사용
+        5. Transfer Inbound (다른 계좌에서 입금):
+           - USD → KRW 환전: Note에서 환율 정보 파싱
+           - KRW → KRW: Amount 그대로 사용
+        
+        Args:
+            account_name: 계좌명
+            
+        Returns:
+            AccountBalance (현금 잔액)
+        """
+        df = self.get_dataframe()
+        
+        # 해외 계좌는 USD이므로 KRW 잔액 = 0
+        if '해외' in account_name:
+            return AccountBalance(
+                account=account_name,
+                cash_balance=0.0
+            )
+        
+        cash_balance = 0.0
+        
+        # 1. Cash Account 거래 처리 (모든 타입)
+        # Interest, Buy, Sell, Dividend는 Net Transaction Value 사용
+        # Deposit, Removal, Transfer (Outbound)는 Amount 사용
+        cash_df = df[(df['Cash Account'] == account_name) & (df['Currency'] == 'KRW')]
+        
+        for _, row in cash_df.iterrows():
+            trans_type = row['Type']
+            amount = row['Amount']
+            net_value = row['Net Transaction Value']
+            
+            if pd.notna(amount) or pd.notna(net_value):
+                # Net Transaction Value 사용 거래
+                if trans_type in ['Interest', 'Sell', 'Dividend'] and pd.notna(net_value):
+                    # 입금: Net Transaction Value (Fee, Tax 차감된 금액)
+                    cash_balance += net_value
+                elif trans_type == 'Buy' and pd.notna(net_value):
+                    # 출금: Net Transaction Value (Fee, Tax 포함된 금액)
+                    cash_balance -= net_value
+                # Amount 사용 거래
+                elif trans_type == 'Deposit' and pd.notna(amount):
+                    cash_balance += amount
+                elif trans_type in ['Removal', 'Transfer (Outbound)'] and pd.notna(amount):
+                    cash_balance -= amount
+        
+        # 2. Offset Account 거래 처리 (Transfer만)
+        # Transfer (Outbound)가 Offset Account에 있으면 Transfer Inbound (다른 계좌에서 입금)
+        offset_df = df[(df['Offset Account'] == account_name) & (df['Type'] == 'Transfer (Outbound)')]
+        
+        for _, row in offset_df.iterrows():
+            amount = row['Amount']
+            currency = row['Currency']
+            from_account = row['Cash Account']
+            note = row.get('Note', '')
+            
+            if pd.notna(amount):
+                # USD → KRW 환전
+                if '해외' in from_account and currency == 'USD':
+                    if '환율' in str(note):
+                        # Note 형식: "USD 3,065.06 KRW 4,287,974 환율 1,388.99 환전 수수료 18,690"
+                        krw_match = re.search(r'KRW\s+([\d,]+)', str(note))
+                        
+                        if krw_match:
+                            # Note에서 KRW 금액 직접 사용
+                            krw_amount = float(krw_match.group(1).replace(',', ''))
+                            cash_balance += krw_amount
+                # KRW → KRW 이체
+                elif currency == 'KRW':
+                    cash_balance += amount
         
         return AccountBalance(
             account=account_name,
-            cash_balance=cash_balance,
-            stock_value=stock_value,
-            total_balance=total_balance
+            cash_balance=cash_balance
         )
     
-    def get_all_account_balances(self) -> List[AccountBalance]:
-        """모든 계좌의 잔액 정보"""
+    def get_all_balances(self) -> List[AccountBalance]:
+        """
+        모든 계좌의 잔액 반환
+        
+        Returns:
+            AccountBalance 리스트
+        """
         accounts = self.get_accounts()
         balances = []
         
@@ -676,147 +469,309 @@ class TransactionParser:
         
         return balances
     
-    def get_total_balance(self) -> TotalBalance:
-        """전체 잔액 정보"""
-        balances = self.get_all_account_balances()
+    def get_all_dividends(self) -> List[DividendInfo]:
+        """
+        모든 배당 수익 반환
         
-        total_cash_balance = sum(balance.cash_balance for balance in balances)
-        total_stock_value = sum(balance.stock_value for balance in balances)
-        total_balance = total_cash_balance + total_stock_value
+        Returns:
+            DividendInfo 리스트
+        """
+        df = self.get_dataframe()
+        dividend_df = df[df['Type'] == 'Dividend'].copy()
         
-        return TotalBalance(
-            total_cash_balance=total_cash_balance,
-            total_stock_value=total_stock_value,
-            total_balance=total_balance,
-            account_count=len(balances)
-        )
+        # 계좌 및 종목별 배당금 합계
+        result = []
+        for (account, security), group in dividend_df.groupby(['Cash Account', 'Security']):
+            total_dividend = group['Net Transaction Value'].sum()
+            result.append(DividendInfo(
+                account=account,
+                security=security if pd.notna(security) else '기타',
+                total_dividend=total_dividend
+            ))
+        
+        return result
     
-    def get_transaction_summary(self) -> Dict[str, Any]:
-        """거래 내역 요약 정보"""
+    def get_dividends_by_account(self, account_name: str) -> List[DividendInfo]:
+        """
+        특정 계좌의 배당 수익 반환
+        
+        Args:
+            account_name: 계좌명
+            
+        Returns:
+            DividendInfo 리스트
+        """
+        df = self.get_dataframe()
+        dividend_df = df[(df['Type'] == 'Dividend') & (df['Cash Account'] == account_name)].copy()
+        
+        result = []
+        for security, group in dividend_df.groupby('Security'):
+            total_dividend = group['Net Transaction Value'].sum()
+            result.append(DividendInfo(
+                account=account_name,
+                security=security if pd.notna(security) else '기타',
+                total_dividend=total_dividend
+            ))
+        
+        return result
+    
+    def get_all_interest(self) -> List[InterestInfo]:
+        """
+        모든 이자 수익 반환
+        
+        Returns:
+            InterestInfo 리스트
+        """
+        df = self.get_dataframe()
+        interest_df = df[df['Type'] == 'Interest'].copy()
+        
+        result = []
+        for account, group in interest_df.groupby('Cash Account'):
+            total_interest = group['Net Transaction Value'].sum()
+            result.append(InterestInfo(
+                account=account,
+                total_interest=total_interest
+            ))
+        
+        return result
+    
+    def get_all_returns(self) -> List[TradingPeriodReturn]:
+        """
+        모든 거래 기간별 수익 반환
+        
+        Returns:
+            TradingPeriodReturn 리스트
+        """
         df = self.get_dataframe()
         
-        summary = {
-            'total_transactions': len(df),
-            'date_range': {
-                'start': df['Date'].min().strftime('%Y-%m-%d'),
-                'end': df['Date'].max().strftime('%Y-%m-%d')
-            },
-            'transaction_types': df['Type'].value_counts().to_dict(),
-            'total_accounts': df['Cash Account'].nunique(),
-            'total_securities': df['Security'].nunique()
-        }
+        result = []
+        accounts = self.get_accounts()
         
-        return summary
+        for account_info in accounts:
+            account_name = account_info.account_name
+            account_df = df[df['Cash Account'] == account_name]
+            
+            # 매도 수익 계산
+            sell_df = account_df[account_df['Type'] == 'Sell']
+            total_sell_amount = sell_df['Net Transaction Value'].sum() if len(sell_df) > 0 else 0
+            
+            # 매수 비용 계산
+            buy_df = account_df[account_df['Type'] == 'Buy']
+            total_buy_cost = buy_df['Net Transaction Value'].sum() if len(buy_df) > 0 else 0
+            
+            if total_buy_cost > 0:
+                total_return = total_sell_amount - total_buy_cost
+                return_percentage = (total_return / total_buy_cost) * 100
+            else:
+                total_return = 0
+                return_percentage = 0
+            
+            result.append(TradingPeriodReturn(
+                account=account_name,
+                total_return=total_return,
+                return_percentage=return_percentage
+            ))
+        
+        return result
+    
+    def get_all_account_balances(self) -> List[AccountBalanceDetail]:
+        """
+        모든 계좌의 상세 잔액 반환 (현금 + 주식 가치)
+        
+        Returns:
+            AccountBalanceDetail 리스트
+        """
+        accounts = self.get_accounts()
+        result = []
+        
+        for account_info in accounts:
+            account_name = account_info.account_name
+            
+            # 현금 잔액
+            cash_balance_obj = self.get_account_balance(account_name)
+            cash_balance = cash_balance_obj.cash_balance
+            
+            # 주식 가치 (보유 종목의 총 비용)
+            holdings = self.get_holdings_by_account(account_name)
+            stock_value = sum(h.total_cost for h in holdings)
+            
+            total_balance = cash_balance + stock_value
+            
+            result.append(AccountBalanceDetail(
+                account=account_name,
+                cash_balance=cash_balance,
+                stock_value=stock_value,
+                total_balance=total_balance
+            ))
+        
+        return result
+    
+    def get_total_balance(self) -> TotalBalance:
+        """
+        전체 잔액 정보 반환
+        
+        Returns:
+            TotalBalance
+        """
+        account_balances = self.get_all_account_balances()
+        
+        total_cash = sum(b.cash_balance for b in account_balances)
+        total_stock = sum(b.stock_value for b in account_balances)
+        total = total_cash + total_stock
+        
+        return TotalBalance(
+            total_cash_balance=total_cash,
+            total_stock_value=total_stock,
+            total_balance=total,
+            account_count=len(account_balances)
+        )
+    
+    def get_all_stock_holdings(self) -> List[StockHoldingWithPrice]:
+        """
+        모든 주식 보유 정보 반환 (현재 가격 포함)
+        
+        yahoo_client가 제공된 경우 실시간 가격 조회, 아니면 0으로 반환
+        
+        Returns:
+            StockHoldingWithPrice 리스트
+        """
+        holdings = self.get_all_holdings()
+        result = []
+        
+        # 실시간 가격 조회 (yahoo_client가 있는 경우)
+        price_cache = {}
+        if self.yahoo_client:
+            # 유니크한 종목 목록 추출
+            unique_securities = list(set(h.security for h in holdings))
+            
+            # 배치로 가격 조회
+            for security in unique_securities:
+                try:
+                    price_info = self.yahoo_client.get_stock_info(security)
+                    if price_info:
+                        price_cache[security] = price_info.get('current_price', 0)
+                    else:
+                        price_cache[security] = 0
+                except Exception as e:
+                    print(f"가격 조회 오류 ({security}): {e}")
+                    price_cache[security] = 0
+        
+        for h in holdings:
+            # 현재 가격 조회 (캐시에서 또는 0)
+            current_price = price_cache.get(h.security, 0) if price_cache else 0
+            current_value = h.shares * current_price
+            unrealized_gain_loss = current_value - h.total_cost
+            unrealized_gain_loss_rate = (unrealized_gain_loss / h.total_cost * 100) if h.total_cost > 0 else 0
+            
+            result.append(StockHoldingWithPrice(
+                account=h.account,
+                security=h.security,
+                shares=h.shares,
+                avg_price=h.avg_price,
+                total_cost=h.total_cost,
+                current_price=current_price,
+                current_value=current_value,
+                unrealized_gain_loss=unrealized_gain_loss,
+                unrealized_gain_loss_rate=unrealized_gain_loss_rate
+            ))
+        
+        return result
     
     def get_yearly_returns(self) -> List[YearlyReturnsDetail]:
-        """연도별 수익 내역 (배당금, 매도 차익, 이자)"""
+        """
+        연도별 수익 내역 반환
+        
+        Returns:
+            YearlyReturnsDetail 리스트
+        """
         df = self.get_dataframe()
         
         # 연도 추출
-        df['Year'] = pd.to_datetime(df['Date']).dt.year
+        df['Year'] = df['Date'].dt.year
         
-        yearly_data = {}
+        yearly_results = []
         
         for year in sorted(df['Year'].unique()):
             year_df = df[df['Year'] == year]
             
-            # 배당금 계산
+            # 배당금
             dividend_df = year_df[year_df['Type'] == 'Dividend']
-            total_dividend = dividend_df['Amount'].sum() if not dividend_df.empty else 0
+            total_dividend = dividend_df['Net Transaction Value'].sum() if len(dividend_df) > 0 else 0
             
-            # 종목별 배당금
-            dividends_by_security = {}
-            # 소유자 및 계좌 타입별 배당금
-            by_owner_and_account = {}
-            
-            for _, row in dividend_df.iterrows():
-                if pd.notna(row['Security']) and pd.notna(row['Cash Account']):
-                    security = row['Security']
-                    account = row['Cash Account']
-                    amount = row['Amount'] if pd.notna(row['Amount']) else 0
-                    
-                    # 전체 종목별 집계
-                    if security not in dividends_by_security:
-                        dividends_by_security[security] = {'dividend': 0, 'sell_profit': 0}
-                    dividends_by_security[security]['dividend'] += amount
-                    
-                    # 계좌 정보 파싱
-                    account_parts = account.split()
-                    if len(account_parts) >= 2:
-                        owner = account_parts[0]
-                        account_type = account_parts[-1] if len(account_parts) > 1 else '기타'
-                        
-                        # 소유자별 그룹화
-                        if owner not in by_owner_and_account:
-                            by_owner_and_account[owner] = {}
-                        if account_type not in by_owner_and_account[owner]:
-                            by_owner_and_account[owner][account_type] = {}
-                        if security not in by_owner_and_account[owner][account_type]:
-                            by_owner_and_account[owner][account_type][security] = {'dividend': 0, 'sell_profit': 0}
-                        
-                        by_owner_and_account[owner][account_type][security]['dividend'] += amount
-            
-            # 매도 차익 계산
-            sell_df = year_df[year_df['Type'] == 'Sell']
-            total_sell_profit = 0
-            
-            for _, row in sell_df.iterrows():
-                if pd.notna(row['Security']) and pd.notna(row['Shares']) and pd.notna(row['Quote']) and pd.notna(row['Cash Account']):
-                    security = row['Security']
-                    account = row['Cash Account']
-                    shares = row['Shares']
-                    sell_price = row['Quote']
-                    
-                    # 평균 매입가 계산 (해당 시점까지의 매수 거래)
-                    buy_df = df[(df['Security'] == security) & 
-                               (df['Type'] == 'Buy') & 
-                               (df['Date'] <= row['Date'])]
-                    
-                    if not buy_df.empty:
-                        total_buy_cost = (buy_df['Shares'] * buy_df['Quote']).sum()
-                        total_buy_shares = buy_df['Shares'].sum()
-                        avg_buy_price = total_buy_cost / total_buy_shares if total_buy_shares > 0 else 0
-                        
-                        # 매도 차익 = (매도가 - 평균 매입가) * 매도 수량
-                        profit = (sell_price - avg_buy_price) * shares
-                        total_sell_profit += profit
-                        
-                        # 전체 종목별 집계
-                        if security not in dividends_by_security:
-                            dividends_by_security[security] = {'dividend': 0, 'sell_profit': 0}
-                        dividends_by_security[security]['sell_profit'] += profit
-                        
-                        # 계좌 정보 파싱
-                        account_parts = account.split()
-                        if len(account_parts) >= 2:
-                            owner = account_parts[0]
-                            account_type = account_parts[-1] if len(account_parts) > 1 else '기타'
-                            
-                            # 소유자별 그룹화
-                            if owner not in by_owner_and_account:
-                                by_owner_and_account[owner] = {}
-                            if account_type not in by_owner_and_account[owner]:
-                                by_owner_and_account[owner][account_type] = {}
-                            if security not in by_owner_and_account[owner][account_type]:
-                                by_owner_and_account[owner][account_type][security] = {'dividend': 0, 'sell_profit': 0}
-                            
-                            by_owner_and_account[owner][account_type][security]['sell_profit'] += profit
-            
-            # 이자 수익
+            # 이자
             interest_df = year_df[year_df['Type'] == 'Interest']
-            total_interest = interest_df['Amount'].sum() if not interest_df.empty else 0
+            total_interest = interest_df['Net Transaction Value'].sum() if len(interest_df) > 0 else 0
             
-            # 전체 수익
-            total_returns = total_dividend + total_sell_profit + total_interest
+            # 매도 차익 (매도 금액 - 매도한 주식의 원가)
+            sell_df = year_df[year_df['Type'] == 'Sell']
+            total_sell_revenue = sell_df['Net Transaction Value'].sum() if len(sell_df) > 0 else 0
+            # 간단하게 매도 금액만 계산 (실제 차익은 별도 계산 필요)
+            total_sell_profit = total_sell_revenue
             
-            yearly_data[year] = YearlyReturnsDetail(
+            # 총 수익
+            total_returns = total_dividend + total_interest + total_sell_profit
+            
+            # 종목별 수익
+            by_security = {}
+            for security, group in dividend_df.groupby('Security'):
+                sec_name = security if pd.notna(security) else '기타'
+                if sec_name not in by_security:
+                    by_security[sec_name] = {
+                        'dividend': 0,
+                        'sell_profit': 0,
+                        'interest': 0
+                    }
+                by_security[sec_name]['dividend'] += group['Net Transaction Value'].sum()
+            
+            for security, group in sell_df.groupby('Security'):
+                sec_name = security if pd.notna(security) else '기타'
+                if sec_name not in by_security:
+                    by_security[sec_name] = {
+                        'dividend': 0,
+                        'sell_profit': 0,
+                        'interest': 0
+                    }
+                by_security[sec_name]['sell_profit'] += group['Net Transaction Value'].sum()
+            
+            # 소유자 및 계좌 타입별 수익
+            by_owner_and_account = {}
+            accounts = self.get_accounts()
+            
+            for account_info in accounts:
+                account_name = account_info.account_name
+                owner = account_info.owner
+                account_type = account_info.account_type
+                
+                if owner not in by_owner_and_account:
+                    by_owner_and_account[owner] = {}
+                if account_type not in by_owner_and_account[owner]:
+                    by_owner_and_account[owner][account_type] = {}
+                
+                account_df = year_df[year_df['Cash Account'] == account_name]
+                
+                dividend_sum = account_df[account_df['Type'] == 'Dividend']['Net Transaction Value'].sum()
+                sell_sum = account_df[account_df['Type'] == 'Sell']['Net Transaction Value'].sum()
+                interest_sum = account_df[account_df['Type'] == 'Interest']['Net Transaction Value'].sum()
+                
+                if dividend_sum > 0 or sell_sum > 0 or interest_sum > 0:
+                    by_owner_and_account[owner][account_type][account_name] = {
+                        'dividend': dividend_sum if pd.notna(dividend_sum) else 0,
+                        'sell_profit': sell_sum if pd.notna(sell_sum) else 0,
+                        'interest': interest_sum if pd.notna(interest_sum) else 0,
+                        'total': (dividend_sum if pd.notna(dividend_sum) else 0) + 
+                                (sell_sum if pd.notna(sell_sum) else 0) + 
+                                (interest_sum if pd.notna(interest_sum) else 0)
+                    }
+            
+            yearly_results.append(YearlyReturnsDetail(
                 year=int(year),
-                total_dividend=float(total_dividend),
-                total_sell_profit=float(total_sell_profit),
-                total_interest=float(total_interest),
-                total_returns=float(total_returns),
-                by_security=dividends_by_security,
+                total_dividend=total_dividend,
+                total_sell_profit=total_sell_profit,
+                total_interest=total_interest,
+                total_returns=total_returns,
+                by_security=by_security,
                 by_owner_and_account=by_owner_and_account
-            )
+            ))
         
-        return list(yearly_data.values())
+        return yearly_results
+

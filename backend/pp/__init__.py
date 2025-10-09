@@ -8,12 +8,14 @@ from .transaction_parser import (
     TransactionParser,
     AccountInfo,
     StockHolding,
+    AccountBalance,
     DividendInfo,
     InterestInfo,
-    YearlyReturnsDetail,
     TradingPeriodReturn,
-    AccountBalance,
+    AccountBalanceDetail,
     TotalBalance,
+    StockHoldingWithPrice,
+    YearlyReturnsDetail,
     normalize_account_name
 )
 
@@ -21,11 +23,13 @@ __all__ = [
     'TransactionParser',
     'AccountInfo',
     'StockHolding',
+    'AccountBalance',
     'DividendInfo',
     'InterestInfo',
-    'YearlyReturnsDetail',
     'TradingPeriodReturn',
-    'AccountBalance',
+    'AccountBalanceDetail',
     'TotalBalance',
+    'StockHoldingWithPrice',
+    'YearlyReturnsDetail',
     'normalize_account_name'
 ]
