@@ -1,11 +1,13 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 import os
+import json
 from typing import List, Dict, Any, Optional
 from pydantic import BaseModel
 import uuid
 import io
 import pandas as pd
+from dataclasses import asdict
 
 # pp 패키지에서 데이터 처리 클래스와 모델 import
 from pp import (
@@ -46,11 +48,304 @@ app.add_middleware(
 CSV_STORAGE_DIR = "csv_data"
 CURRENT_CSV_FILE = os.path.join(CSV_STORAGE_DIR, "current_portfolio.csv")
 
+# 파싱된 데이터 캐시 디렉토리
+PARSED_DATA_DIR = "parsed_data"
+PARSED_DATA_FILE = os.path.join(PARSED_DATA_DIR, "portfolio_data.json")
+
 # 디렉토리 생성
 os.makedirs(CSV_STORAGE_DIR, exist_ok=True)
+os.makedirs(PARSED_DATA_DIR, exist_ok=True)
 
 # TransactionParser 인스턴스 (단일 인스턴스로 변경)
 current_parser: Optional[TransactionParser] = None
+
+def parse_and_cache_data(parser: TransactionParser):
+    """모든 데이터를 파싱하고 JSON으로 캐싱"""
+    try:
+        print("📊 데이터 파싱 시작...")
+        
+        # 전체 잔액 정보
+        total_balance = parser.get_total_balance()
+        
+        # 주식 보유 목록
+        holdings = parser.get_all_stock_holdings()
+        holdings_with_price = [h for h in holdings if h.current_price > 0]
+        
+        # 주식 포트폴리오 통계
+        total_stock_cost = sum(h.total_cost for h in holdings_with_price)
+        total_stock_value = sum(h.current_value for h in holdings_with_price)
+        total_unrealized_gain = total_stock_value - total_stock_cost
+        
+        # 수익률 계산
+        stock_return_rate = (total_unrealized_gain / total_stock_cost * 100) if total_stock_cost > 0 else 0
+        
+        # 수익/손실 종목 수
+        gain_holdings = [h for h in holdings_with_price if h.unrealized_gain_loss >= 0]
+        loss_holdings = [h for h in holdings_with_price if h.unrealized_gain_loss < 0]
+        
+        # 자산 배분
+        cash_ratio = (total_balance.total_cash_balance / total_balance.total_balance * 100) if total_balance.total_balance > 0 else 0
+        stock_ratio = (total_balance.total_stock_value / total_balance.total_balance * 100) if total_balance.total_balance > 0 else 0
+        
+        # 포트폴리오 요약 데이터 생성
+        portfolio_summary = {
+            "total_assets": {
+                "cash_balance": total_balance.total_cash_balance,
+                "stock_value": total_balance.total_stock_value,
+                "total_balance": total_balance.total_balance,
+                "account_count": total_balance.account_count
+            },
+            "stock_portfolio": {
+                "total_investment": total_stock_cost,
+                "current_value": total_stock_value,
+                "unrealized_gain_loss": total_unrealized_gain,
+                "return_rate": stock_return_rate,
+                "total_holdings": len(holdings_with_price),
+                "gain_holdings": len(gain_holdings),
+                "loss_holdings": len(loss_holdings)
+            },
+            "asset_allocation": {
+                "cash_ratio": cash_ratio,
+                "stock_ratio": stock_ratio
+            }
+        }
+        
+        # 포트폴리오 성과 데이터 생성
+        holdings_sorted = sorted(holdings_with_price, key=lambda x: x.unrealized_gain_loss_rate, reverse=True)
+        top_performers = holdings_sorted[:5]
+        bottom_performers = holdings_sorted[-5:]
+        
+        account_performance = {}
+        for holding in holdings_with_price:
+            if holding.account not in account_performance:
+                account_performance[holding.account] = {
+                    "holdings": [],
+                    "total_investment": 0,
+                    "total_value": 0,
+                    "total_gain_loss": 0
+                }
+            account_performance[holding.account]["holdings"].append(asdict(holding))
+            account_performance[holding.account]["total_investment"] += holding.total_cost
+            account_performance[holding.account]["total_value"] += holding.current_value
+        
+        for account, data in account_performance.items():
+            data["total_gain_loss"] = data["total_value"] - data["total_investment"]
+            data["return_rate"] = (data["total_gain_loss"] / data["total_investment"] * 100) if data["total_investment"] > 0 else 0
+        
+        portfolio_performance = {
+            "top_performers": [
+                {
+                    "security": h.security,
+                    "account": h.account,
+                    "shares": h.shares,
+                    "investment": h.total_cost,
+                    "current_value": h.current_value,
+                    "gain_loss": h.unrealized_gain_loss,
+                    "return_rate": h.unrealized_gain_loss_rate
+                } for h in top_performers
+            ],
+            "bottom_performers": [
+                {
+                    "security": h.security,
+                    "account": h.account,
+                    "shares": h.shares,
+                    "investment": h.total_cost,
+                    "current_value": h.current_value,
+                    "gain_loss": h.unrealized_gain_loss,
+                    "return_rate": h.unrealized_gain_loss_rate
+                } for h in bottom_performers
+            ],
+            "account_performance": {
+                account: {
+                    "holdings_count": len(data["holdings"]),
+                    "total_investment": data["total_investment"],
+                    "total_value": data["total_value"],
+                    "total_gain_loss": data["total_gain_loss"],
+                    "return_rate": data["return_rate"]
+                } for account, data in account_performance.items()
+            }
+        }
+        
+        # 포트폴리오 리스크 데이터 생성
+        total_value = sum(h.current_value for h in holdings_with_price)
+        total_gain = sum(h.unrealized_gain_loss for h in gain_holdings)
+        total_loss = sum(h.unrealized_gain_loss for h in loss_holdings)
+        
+        max_loss_holding = min(holdings_with_price, key=lambda x: x.unrealized_gain_loss) if loss_holdings else None
+        max_gain_holding = max(holdings_with_price, key=lambda x: x.unrealized_gain_loss) if gain_holdings else None
+        
+        holdings_by_value = sorted(holdings_with_price, key=lambda x: x.current_value, reverse=True)
+        top5_concentration = sum(h.current_value for h in holdings_by_value[:5]) / total_value * 100 if total_value > 0 else 0
+        
+        portfolio_risk = {
+            "risk_metrics": {
+                "total_holdings": len(holdings_with_price),
+                "gain_holdings_count": len(gain_holdings),
+                "loss_holdings_count": len(loss_holdings),
+                "win_rate": len(gain_holdings) / len(holdings_with_price) * 100 if holdings_with_price else 0
+            },
+            "gain_loss_analysis": {
+                "total_gain": total_gain,
+                "total_loss": total_loss,
+                "net_gain_loss": total_gain + total_loss,
+                "max_gain": {
+                    "security": max_gain_holding.security,
+                    "account": max_gain_holding.account,
+                    "gain_loss": max_gain_holding.unrealized_gain_loss,
+                    "return_rate": max_gain_holding.unrealized_gain_loss_rate
+                } if max_gain_holding else None,
+                "max_loss": {
+                    "security": max_loss_holding.security,
+                    "account": max_loss_holding.account,
+                    "gain_loss": max_loss_holding.unrealized_gain_loss,
+                    "return_rate": max_loss_holding.unrealized_gain_loss_rate
+                } if max_loss_holding else None
+            },
+            "concentration": {
+                "top5_concentration": top5_concentration,
+                "top_holdings": [
+                    {
+                        "security": h.security,
+                        "current_value": h.current_value,
+                        "portfolio_weight": h.current_value / total_value * 100 if total_value > 0 else 0
+                    } for h in holdings_by_value[:5]
+                ]
+            }
+        }
+        
+        # 모든 필요한 데이터 파싱
+        cached_data = {
+            "portfolio_summary": portfolio_summary,
+            "portfolio_performance": portfolio_performance,
+            "portfolio_risk": portfolio_risk,
+            "accounts": [asdict(acc) for acc in parser.get_accounts()],
+            "holdings": [asdict(h) for h in holdings],
+            "balances": [asdict(b) for b in parser.get_all_account_balances()],
+            "total_balance": asdict(total_balance),
+            "yearly_returns": [asdict(yr) for yr in parser.get_yearly_returns()],
+            "dividends": [asdict(d) for d in parser.get_all_dividends()],
+            "interest": [asdict(i) for i in parser.get_all_interest()],
+        }
+        
+        # 계좌별 상세 정보도 추가
+        accounts_detailed = parser.get_accounts()
+        accounts_by_owner_and_type = {}
+        
+        # 먼저 모든 보유 종목 가져오기 (현재가 포함)
+        all_holdings = parser.get_all_stock_holdings()
+        holdings_by_account = {}
+        for h in all_holdings:
+            if h.account not in holdings_by_account:
+                holdings_by_account[h.account] = []
+            holdings_by_account[h.account].append(h)
+        
+        for account_info in accounts_detailed:
+            owner = account_info.owner
+            account_type = account_info.account_type
+            account_name = account_info.account_name
+            
+            if owner not in accounts_by_owner_and_type:
+                accounts_by_owner_and_type[owner] = {}
+            if account_type not in accounts_by_owner_and_type[owner]:
+                accounts_by_owner_and_type[owner][account_type] = []
+            
+            # 계좌별 보유 종목 및 잔액
+            holdings = holdings_by_account.get(account_name, [])
+            balance = parser.get_account_balance(account_name)
+            
+            total_investment = sum(h.total_cost for h in holdings)
+            stock_value = sum(h.current_value for h in holdings)
+            total_gain_loss = sum(h.unrealized_gain_loss for h in holdings)
+            
+            account_detail = {
+                "account_name": account_type,
+                "full_account_name": account_name,
+                "owner": owner,
+                "broker": account_info.broker,
+                "balance": balance.cash_balance,
+                "stock_value": stock_value,
+                "total_balance": balance.cash_balance + stock_value,
+                "total_investment": total_investment,
+                "total_gain_loss": total_gain_loss,
+                "holdings": [asdict(h) for h in holdings]
+            }
+            
+            accounts_by_owner_and_type[owner][account_type].append(account_detail)
+        
+        cached_data["accounts_detailed"] = {
+            "accounts_by_owner_and_type": accounts_by_owner_and_type
+        }
+        
+        # 소유자별 포트폴리오 요약 데이터 생성
+        owner_summary = {}
+        
+        # 소유자 우선순위
+        owner_order = {'혜란': 1, '유신': 2, '민호': 3}
+        # 계좌타입 우선순위
+        account_type_order = {'연금저축': 1, 'ISA': 2, '종합매매': 3, '종합매매 해외': 4}
+        
+        for owner, account_types in accounts_by_owner_and_type.items():
+            if owner not in owner_summary:
+                owner_summary[owner] = {}
+            
+            for account_type, accounts in account_types.items():
+                summary = {
+                    'cash_balance': sum(acc['balance'] for acc in accounts),
+                    'stock_value': sum(acc['stock_value'] for acc in accounts),
+                    'total_balance': sum(acc['total_balance'] for acc in accounts),
+                    'total_investment': sum(acc['total_investment'] for acc in accounts),
+                    'total_gain_loss': sum(acc['total_gain_loss'] for acc in accounts),
+                    'account_count': len(accounts)
+                }
+                owner_summary[owner][account_type] = summary
+        
+        # 정렬된 소유자별 포트폴리오
+        sorted_owner_summary = []
+        for owner in sorted(owner_summary.keys(), key=lambda x: owner_order.get(x, 999)):
+            account_types_list = []
+            for account_type in sorted(owner_summary[owner].keys(), key=lambda x: account_type_order.get(x, 999)):
+                summary = owner_summary[owner][account_type]
+                return_rate = (summary['total_gain_loss'] / summary['total_investment'] * 100) if summary['total_investment'] > 0 else 0
+                account_types_list.append({
+                    'accountType': account_type,
+                    'cash_balance': summary['cash_balance'],
+                    'stock_value': summary['stock_value'],
+                    'total_balance': summary['total_balance'],
+                    'total_investment': summary['total_investment'],
+                    'total_gain_loss': summary['total_gain_loss'],
+                    'account_count': summary['account_count'],
+                    'return_rate': return_rate
+                })
+            
+            # 소유자별 합계 계산
+            owner_total = {
+                'cash_balance': sum(at['cash_balance'] for at in account_types_list),
+                'stock_value': sum(at['stock_value'] for at in account_types_list),
+                'total_balance': sum(at['total_balance'] for at in account_types_list),
+                'total_investment': sum(at['total_investment'] for at in account_types_list),
+                'total_gain_loss': sum(at['total_gain_loss'] for at in account_types_list)
+            }
+            
+            sorted_owner_summary.append({
+                'owner': owner,
+                'accountTypes': account_types_list,
+                'total': owner_total
+            })
+        
+        # portfolio_summary에 owner_summary 추가
+        cached_data["portfolio_summary"]["owner_summary"] = sorted_owner_summary
+        cached_data["owner_summary"] = sorted_owner_summary
+        
+        # JSON 파일로 저장
+        with open(PARSED_DATA_FILE, 'w', encoding='utf-8') as f:
+            json.dump(cached_data, f, ensure_ascii=False, indent=2)
+        
+        print(f"✅ 데이터 파싱 완료 및 캐시 저장: {PARSED_DATA_FILE}")
+        return cached_data
+        
+    except Exception as e:
+        print(f"⚠️ 데이터 파싱 실패: {e}")
+        raise
 
 def load_existing_csv():
     """서버 시작 시 기존 CSV 파일 로드"""
@@ -61,6 +356,9 @@ def load_existing_csv():
             print(f"기존 CSV 파일 로드 중: {CURRENT_CSV_FILE}")
             current_parser = TransactionParser(CURRENT_CSV_FILE, yahoo_client=yahoo_client)
             print(f"✅ CSV 파일 로드 완료")
+            
+            # 데이터 파싱 및 캐싱
+            parse_and_cache_data(current_parser)
         except Exception as e:
             print(f"⚠️ CSV 파일 로드 실패: {e}")
             current_parser = None
@@ -231,27 +529,47 @@ async def upload_csv(file: UploadFile = File(...)):
         # TransactionParser 인스턴스 생성
         current_parser = TransactionParser(CURRENT_CSV_FILE, yahoo_client=yahoo_client)
         
+        # 데이터 파싱 및 캐싱
+        parse_and_cache_data(current_parser)
+        
         return {
-            "message": "CSV 파일이 성공적으로 업로드되고 로드되었습니다.",
+            "message": "CSV 파일이 성공적으로 업로드되고 파싱되었습니다.",
             "file_size": len(csv_text),
-            "file_path": CURRENT_CSV_FILE
+            "file_path": CURRENT_CSV_FILE,
+            "parsed_data_path": PARSED_DATA_FILE
         }
     except Exception as e:
         current_parser = None
         raise HTTPException(status_code=400, detail=f"CSV 파일 처리 중 오류가 발생했습니다: {str(e)}")
+
+@app.get("/data/parsed")
+async def get_parsed_data():
+    """파싱된 전체 데이터를 JSON으로 반환"""
+    if os.path.exists(PARSED_DATA_FILE):
+        try:
+            with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+                data = json.load(f)
+            return data
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"파싱된 데이터 로드 실패: {str(e)}")
+    else:
+        raise HTTPException(status_code=404, detail="파싱된 데이터가 없습니다. CSV 파일을 업로드해주세요.")
 
 @app.get("/cache/info")
 async def get_cache_info():
     """현재 CSV 파일 정보 조회"""
     if os.path.exists(CURRENT_CSV_FILE) and current_parser is not None:
         file_size = os.path.getsize(CURRENT_CSV_FILE)
+        has_parsed_data = os.path.exists(PARSED_DATA_FILE)
         return {
             "total_sessions": 1,
             "total_cache_size": file_size,
             "total_cache_size_mb": round(file_size / 1024 / 1024, 2),
             "has_data": True,
+            "has_parsed_data": has_parsed_data,
             "sessions": ["current"],
-            "csv_file": CURRENT_CSV_FILE
+            "csv_file": CURRENT_CSV_FILE,
+            "parsed_data_file": PARSED_DATA_FILE if has_parsed_data else None
         }
     else:
         return {
@@ -259,8 +577,10 @@ async def get_cache_info():
             "total_cache_size": 0,
             "total_cache_size_mb": 0.0,
             "has_data": False,
+            "has_parsed_data": False,
             "sessions": [],
-            "csv_file": None
+            "csv_file": None,
+            "parsed_data_file": None
         }
 
 @app.delete("/cache/{session_id}")
@@ -272,14 +592,26 @@ async def clear_session_cache(session_id: str):
     current_parser = None
     
     # CSV 파일 삭제
+    csv_deleted = False
     if os.path.exists(CURRENT_CSV_FILE):
         try:
             os.remove(CURRENT_CSV_FILE)
-            return {"message": "CSV 파일이 삭제되었습니다. 새로운 파일을 업로드할 수 있습니다."}
+            csv_deleted = True
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"파일 삭제 실패: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"CSV 파일 삭제 실패: {str(e)}")
     
-    return {"message": "삭제할 CSV 파일이 없습니다."}
+    # 파싱된 데이터 파일 삭제
+    parsed_deleted = False
+    if os.path.exists(PARSED_DATA_FILE):
+        try:
+            os.remove(PARSED_DATA_FILE)
+            parsed_deleted = True
+        except Exception as e:
+            print(f"⚠️ 파싱 데이터 삭제 실패: {e}")
+    
+    if csv_deleted or parsed_deleted:
+        return {"message": "캐시 파일이 삭제되었습니다. 새로운 파일을 업로드할 수 있습니다."}
+    return {"message": "삭제할 캐시 파일이 없습니다."}
 
 @app.delete("/cache/clear")
 async def clear_all_cache():
@@ -290,14 +622,26 @@ async def clear_all_cache():
     current_parser = None
     
     # CSV 파일 삭제
+    csv_deleted = False
     if os.path.exists(CURRENT_CSV_FILE):
         try:
             os.remove(CURRENT_CSV_FILE)
-            return {"message": "CSV 파일이 삭제되었습니다. 새로운 파일을 업로드할 수 있습니다."}
+            csv_deleted = True
         except Exception as e:
-            raise HTTPException(status_code=500, detail=f"파일 삭제 실패: {str(e)}")
+            raise HTTPException(status_code=500, detail=f"CSV 파일 삭제 실패: {str(e)}")
     
-    return {"message": "삭제할 CSV 파일이 없습니다."}
+    # 파싱된 데이터 파일 삭제
+    parsed_deleted = False
+    if os.path.exists(PARSED_DATA_FILE):
+        try:
+            os.remove(PARSED_DATA_FILE)
+            parsed_deleted = True
+        except Exception as e:
+            print(f"⚠️ 파싱 데이터 삭제 실패: {e}")
+    
+    if csv_deleted or parsed_deleted:
+        return {"message": "캐시 파일이 삭제되었습니다. 새로운 파일을 업로드할 수 있습니다."}
+    return {"message": "삭제할 캐시 파일이 없습니다."}
 
 def get_parser(session_id: str = None) -> TransactionParser:
     """현재 TransactionParser 인스턴스를 가져옴 (session_id는 무시됨 - 하위 호환성 유지)"""
@@ -557,6 +901,17 @@ async def get_symbol_info(symbol: str):
 async def get_portfolio_summary(session_id: str):
     """포트폴리오 전체 요약"""
     try:
+        # 캐시된 데이터가 있으면 사용
+        if os.path.exists(PARSED_DATA_FILE):
+            try:
+                with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+                    cached_data = json.load(f)
+                    if 'portfolio_summary' in cached_data:
+                        return cached_data['portfolio_summary']
+            except Exception as e:
+                print(f"⚠️ 캐시된 데이터 로드 실패: {e}")
+        
+        # 캐시가 없으면 실시간 계산
         parser = get_parser(session_id)
         
         # 전체 잔액 정보

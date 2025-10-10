@@ -8,7 +8,8 @@ import type {
   FilterOptions,
   TransactionList,
   AccountsDetailed,
-  YearlyReturnsDetail
+  YearlyReturnsDetail,
+  ParsedData
 } from '../types';
 
 const API_BASE_URL = 'http://localhost:8000';
@@ -120,6 +121,12 @@ export const api = {
   // 연도별 수익 내역 조회
   getYearlyReturns: async (sessionId: string): Promise<YearlyReturnsDetail[]> => {
     const response = await apiClient.get(`/returns/yearly/${sessionId}`);
+    return response.data;
+  },
+
+  // 파싱된 전체 데이터 조회 (JSON 캐시)
+  getParsedData: async (): Promise<ParsedData> => {
+    const response = await apiClient.get('/data/parsed');
     return response.data;
   },
 };

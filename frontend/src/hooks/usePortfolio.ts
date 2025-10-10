@@ -42,8 +42,32 @@ export const usePortfolio = () => {
         total_sessions: 1
       });
       
-      // 업로드 후 자동으로 포트폴리오 데이터 로드
-      await loadPortfolioData(dummySessionId);
+      // 🚀 파싱된 JSON 데이터를 한 번에 로드
+      const parsedData = await api.getParsedData();
+      
+      // 모든 데이터 즉시 설정
+      if (parsedData.portfolio_summary) {
+        setPortfolioSummary(parsedData.portfolio_summary);
+      }
+      if (parsedData.portfolio_performance) {
+        setPortfolioPerformance(parsedData.portfolio_performance);
+      }
+      if (parsedData.portfolio_risk) {
+        setPortfolioRisk(parsedData.portfolio_risk);
+      }
+      if (parsedData.accounts_detailed) {
+        setAccountsDetailed(parsedData.accounts_detailed);
+      }
+      if (parsedData.yearly_returns) {
+        setYearlyReturns(parsedData.yearly_returns);
+      }
+      
+      // 거래 내역은 조금 나중에 로드
+      setTimeout(() => {
+        api.getAllTransactions(dummySessionId)
+          .then(transactions => setTransactionList(transactions))
+          .catch(err => console.error('거래 내역 로드 실패:', err));
+      }, 100);
       
     } catch (err) {
       setError(err instanceof Error ? err.message : 'CSV 업로드 중 오류가 발생했습니다.');
@@ -85,7 +109,7 @@ export const usePortfolio = () => {
           // 먼저 캐시 정보를 확인하여 데이터가 있는지 체크
           const cacheInfo = await api.getCacheInfo();
           
-          if (cacheInfo.has_data) {
+          if (cacheInfo.has_data && cacheInfo.has_parsed_data) {
             const dummySessionId = 'current';
             
             // 즉시 세션 설정 (화면 전환)
@@ -100,35 +124,32 @@ export const usePortfolio = () => {
             // 초기 체크 완료 표시 (화면 전환 트리거)
             setInitialCheckDone(true);
             
-            // 1단계: 필수 데이터만 먼저 로드 (포트폴리오 요약만)
-            const summary = await api.getPortfolioSummary(dummySessionId);
-            setPortfolioSummary(summary);
+            // 🚀 파싱된 JSON 데이터를 한 번에 로드
+            const parsedData = await api.getParsedData();
             
-            // 2단계: 나머지 데이터는 백그라운드에서 비동기 로드
-            Promise.all([
-              api.getPortfolioPerformance(dummySessionId),
-              api.getPortfolioRisk(dummySessionId),
-              api.getAccountsDetailed(dummySessionId),
-            ]).then(([performance, risk, accounts]) => {
-              setPortfolioPerformance(performance);
-              setPortfolioRisk(risk);
-              setAccountsDetailed(accounts);
-            }).catch(err => {
-              console.error('백그라운드 데이터 로드 실패:', err);
-            });
+            // 모든 데이터 즉시 설정
+            if (parsedData.portfolio_summary) {
+              setPortfolioSummary(parsedData.portfolio_summary);
+            }
+            if (parsedData.portfolio_performance) {
+              setPortfolioPerformance(parsedData.portfolio_performance);
+            }
+            if (parsedData.portfolio_risk) {
+              setPortfolioRisk(parsedData.portfolio_risk);
+            }
+            if (parsedData.accounts_detailed) {
+              setAccountsDetailed(parsedData.accounts_detailed);
+            }
+            if (parsedData.yearly_returns) {
+              setYearlyReturns(parsedData.yearly_returns);
+            }
             
-            // 3단계: 덜 중요한 데이터는 더 나중에 로드
+            // 거래 내역은 조금 나중에 로드 (덜 중요)
             setTimeout(() => {
-              Promise.all([
-                api.getAllTransactions(dummySessionId),
-                api.getYearlyReturns(dummySessionId)
-              ]).then(([transactions, returns]) => {
-                setTransactionList(transactions);
-                setYearlyReturns(returns);
-              }).catch(err => {
-                console.error('추가 데이터 로드 실패:', err);
-              });
-            }, 500);
+              api.getAllTransactions(dummySessionId)
+                .then(transactions => setTransactionList(transactions))
+                .catch(err => console.error('거래 내역 로드 실패:', err));
+            }, 100);
           } else {
             setInitialCheckDone(true);
           }

@@ -28,10 +28,34 @@ export interface AssetAllocation {
   stock_ratio: number;
 }
 
+export interface OwnerAccountTypeSummary {
+  accountType: string;
+  cash_balance: number;
+  stock_value: number;
+  total_balance: number;
+  total_investment: number;
+  total_gain_loss: number;
+  account_count: number;
+  return_rate: number;
+}
+
+export interface OwnerSummary {
+  owner: string;
+  accountTypes: OwnerAccountTypeSummary[];
+  total: {
+    cash_balance: number;
+    stock_value: number;
+    total_balance: number;
+    total_investment: number;
+    total_gain_loss: number;
+  };
+}
+
 export interface PortfolioSummary {
   total_assets: TotalAssets;
   stock_portfolio: StockPortfolio;
   asset_allocation: AssetAllocation;
+  owner_summary?: OwnerSummary[];
 }
 
 export interface TopPerformer {
@@ -105,7 +129,22 @@ export interface CacheInfo {
   total_cache_size: number;
   total_cache_size_mb: number;
   has_data: boolean;
+  has_parsed_data?: boolean;
   sessions: string[];
+}
+
+export interface ParsedData {
+  portfolio_summary?: PortfolioSummary;
+  portfolio_performance?: PortfolioPerformance;
+  portfolio_risk?: PortfolioRisk;
+  accounts_detailed?: AccountsDetailed;
+  yearly_returns?: YearlyReturnsDetail[];
+  holdings?: any[];
+  balances?: any[];
+  total_balance?: any;
+  dividends?: any[];
+  interest?: any[];
+  owner_summary?: OwnerSummary[];
 }
 
 export interface FilterOptions {

@@ -1,0 +1,2529 @@
+{
+  "portfolio_summary": {
+    "total_assets": {
+      "cash_balance": 4797107.0,
+      "stock_value": 107104624.77310924,
+      "total_balance": 111901731.77310924,
+      "account_count": 12
+    },
+    "stock_portfolio": {
+      "total_investment": 107104624.77310924,
+      "current_value": 149879505.0,
+      "unrealized_gain_loss": 42774880.22689076,
+      "return_rate": 39.93747265116254,
+      "total_holdings": 15,
+      "gain_holdings": 14,
+      "loss_holdings": 1
+    },
+    "asset_allocation": {
+      "cash_ratio": 4.286892547585022,
+      "stock_ratio": 95.71310745241497
+    },
+    "owner_summary": [
+      {
+        "owner": "혜란",
+        "accountTypes": [
+          {
+            "accountType": "연금저축",
+            "cash_balance": 4332006.0,
+            "stock_value": 0,
+            "total_balance": 4332006.0,
+            "total_investment": 0,
+            "total_gain_loss": 0,
+            "account_count": 1,
+            "return_rate": 0
+          },
+          {
+            "accountType": "종합매매",
+            "cash_balance": 0.0,
+            "stock_value": 2095395.0,
+            "total_balance": 2095395.0,
+            "total_investment": 1142049.0,
+            "total_gain_loss": 953346.0,
+            "account_count": 1,
+            "return_rate": 83.47680353469947
+          }
+        ],
+        "total": {
+          "cash_balance": 4332006.0,
+          "stock_value": 2095395.0,
+          "total_balance": 6427401.0,
+          "total_investment": 1142049.0,
+          "total_gain_loss": 953346.0
+        }
+      },
+      {
+        "owner": "유신",
+        "accountTypes": [
+          {
+            "accountType": "연금저축",
+            "cash_balance": 14763.0,
+            "stock_value": 31082890.0,
+            "total_balance": 31097653.0,
+            "total_investment": 26847361.0,
+            "total_gain_loss": 4235529.0,
+            "account_count": 1,
+            "return_rate": 15.776332727823789
+          },
+          {
+            "accountType": "종합매매",
+            "cash_balance": 0.0,
+            "stock_value": 9440000.0,
+            "total_balance": 9440000.0,
+            "total_investment": 5011932.773109243,
+            "total_gain_loss": 4428067.226890757,
+            "account_count": 1,
+            "return_rate": 88.35049126454514
+          }
+        ],
+        "total": {
+          "cash_balance": 14763.0,
+          "stock_value": 40522890.0,
+          "total_balance": 40537653.0,
+          "total_investment": 31859293.773109242,
+          "total_gain_loss": 8663596.226890758
+        }
+      },
+      {
+        "owner": "민호",
+        "accountTypes": [
+          {
+            "accountType": "연금저축",
+            "cash_balance": 77889.0,
+            "stock_value": 81523890.0,
+            "total_balance": 81601779.0,
+            "total_investment": 52180555.0,
+            "total_gain_loss": 29343335.0,
+            "account_count": 1,
+            "return_rate": 56.2342332311337
+          },
+          {
+            "accountType": "ISA",
+            "cash_balance": 29131.0,
+            "stock_value": 461350.0,
+            "total_balance": 490481.0,
+            "total_investment": 393070.0,
+            "total_gain_loss": 68280.0,
+            "account_count": 1,
+            "return_rate": 17.370951738876027
+          },
+          {
+            "accountType": "종합매매",
+            "cash_balance": 343318.0,
+            "stock_value": 25275980.0,
+            "total_balance": 25619298.0,
+            "total_investment": 21529657.0,
+            "total_gain_loss": 3746323.0,
+            "account_count": 4,
+            "return_rate": 17.40075561816893
+          },
+          {
+            "accountType": "종합매매 해외",
+            "cash_balance": 0.0,
+            "stock_value": 0,
+            "total_balance": 0.0,
+            "total_investment": 0,
+            "total_gain_loss": 0,
+            "account_count": 2,
+            "return_rate": 0
+          }
+        ],
+        "total": {
+          "cash_balance": 450338.0,
+          "stock_value": 107261220.0,
+          "total_balance": 107711558.0,
+          "total_investment": 74103282.0,
+          "total_gain_loss": 33157938.0
+        }
+      }
+    ]
+  },
+  "portfolio_performance": {
+    "top_performers": [
+      {
+        "security": "기업은행",
+        "account": "민호 토스 종합매매",
+        "shares": 1.0,
+        "investment": 9150.0,
+        "current_value": 18970.0,
+        "gain_loss": 9820.0,
+        "return_rate": 107.3224043715847
+      },
+      {
+        "security": "삼성전자",
+        "account": "유신 키움 종합매매",
+        "shares": 100.0,
+        "investment": 5011932.773109243,
+        "current_value": 9440000.0,
+        "gain_loss": 4428067.226890757,
+        "return_rate": 88.35049126454514
+      },
+      {
+        "security": "ACE 미국S&P500",
+        "account": "혜란 키움 종합매매",
+        "shares": 87.0,
+        "investment": 1142049.0,
+        "current_value": 2095395.0,
+        "gain_loss": 953346.0,
+        "return_rate": 83.47680353469947
+      },
+      {
+        "security": "ACE 미국나스닥100",
+        "account": "민호 NH 연금저축",
+        "shares": 1506.0,
+        "investment": 23167870.0,
+        "current_value": 41061090.0,
+        "gain_loss": 17893220.0,
+        "return_rate": 77.23290919709062
+      },
+      {
+        "security": "삼성전자",
+        "account": "민호 신한 종합매매",
+        "shares": 30.0,
+        "investment": 1641000.0,
+        "current_value": 2832000.0,
+        "gain_loss": 1191000.0,
+        "return_rate": 72.57769652650823
+      }
+    ],
+    "bottom_performers": [
+      {
+        "security": "KODEX 고배당주",
+        "account": "민호 신한 종합매매",
+        "shares": 33.0,
+        "investment": 402765.0,
+        "current_value": 427350.0,
+        "gain_loss": 24585.0,
+        "return_rate": 6.104055714870955
+      },
+      {
+        "security": "KODEX 고배당주",
+        "account": "민호 NH ISA",
+        "shares": 16.0,
+        "investment": 197120.0,
+        "current_value": 207200.0,
+        "gain_loss": 10080.0,
+        "return_rate": 5.113636363636364
+      },
+      {
+        "security": "ACE 미국S&P500",
+        "account": "유신 키움 연금저축",
+        "shares": 79.0,
+        "investment": 1852965.0,
+        "current_value": 1902715.0,
+        "gain_loss": 49750.0,
+        "return_rate": 2.6848861149562997
+      },
+      {
+        "security": "RISE 미국S&P500",
+        "account": "유신 키움 연금저축",
+        "shares": 210.0,
+        "investment": 4257386.0,
+        "current_value": 4362750.0,
+        "gain_loss": 105364.0,
+        "return_rate": 2.4748519396643855
+      },
+      {
+        "security": "GS글로벌",
+        "account": "민호 토스 종합매매",
+        "shares": 1.0,
+        "investment": 2835.0,
+        "current_value": 2460.0,
+        "gain_loss": -375.0,
+        "return_rate": -13.227513227513226
+      }
+    ],
+    "account_performance": {
+      "민호 NH ISA": {
+        "holdings_count": 2,
+        "total_investment": 393070.0,
+        "total_value": 461350.0,
+        "total_gain_loss": 68280.0,
+        "return_rate": 17.370951738876027
+      },
+      "민호 NH 연금저축": {
+        "holdings_count": 2,
+        "total_investment": 52180555.0,
+        "total_value": 81523890.0,
+        "total_gain_loss": 29343335.0,
+        "return_rate": 56.2342332311337
+      },
+      "민호 신한 종합매매": {
+        "holdings_count": 2,
+        "total_investment": 2043765.0,
+        "total_value": 3259350.0,
+        "total_gain_loss": 1215585.0,
+        "return_rate": 59.47772860382676
+      },
+      "민호 키움 종합매매": {
+        "holdings_count": 1,
+        "total_investment": 19473907.0,
+        "total_value": 21995200.0,
+        "total_gain_loss": 2521293.0,
+        "return_rate": 12.94703214922409
+      },
+      "민호 토스 종합매매": {
+        "holdings_count": 2,
+        "total_investment": 11985.0,
+        "total_value": 21430.0,
+        "total_gain_loss": 9445.0,
+        "return_rate": 78.80684188569045
+      },
+      "유신 키움 연금저축": {
+        "holdings_count": 4,
+        "total_investment": 26847361.0,
+        "total_value": 31082890.0,
+        "total_gain_loss": 4235529.0,
+        "return_rate": 15.776332727823789
+      },
+      "유신 키움 종합매매": {
+        "holdings_count": 1,
+        "total_investment": 5011932.773109243,
+        "total_value": 9440000.0,
+        "total_gain_loss": 4428067.226890757,
+        "return_rate": 88.35049126454514
+      },
+      "혜란 키움 종합매매": {
+        "holdings_count": 1,
+        "total_investment": 1142049.0,
+        "total_value": 2095395.0,
+        "total_gain_loss": 953346.0,
+        "return_rate": 83.47680353469947
+      }
+    }
+  },
+  "portfolio_risk": {
+    "risk_metrics": {
+      "total_holdings": 15,
+      "gain_holdings_count": 14,
+      "loss_holdings_count": 1,
+      "win_rate": 93.33333333333333
+    },
+    "gain_loss_analysis": {
+      "total_gain": 42775255.22689076,
+      "total_loss": -375.0,
+      "net_gain_loss": 42774880.22689076,
+      "max_gain": {
+        "security": "ACE 미국나스닥100",
+        "account": "민호 NH 연금저축",
+        "gain_loss": 17893220.0,
+        "return_rate": 77.23290919709062
+      },
+      "max_loss": {
+        "security": "GS글로벌",
+        "account": "민호 토스 종합매매",
+        "gain_loss": -375.0,
+        "return_rate": -13.227513227513226
+      }
+    },
+    "concentration": {
+      "top5_concentration": 85.64467503412158,
+      "top_holdings": [
+        {
+          "security": "ACE 미국나스닥100",
+          "current_value": 41061090.0,
+          "portfolio_weight": 27.396067260830627
+        },
+        {
+          "security": "ACE 미국S&P500",
+          "current_value": 40462800.0,
+          "portfolio_weight": 26.99688659900498
+        },
+        {
+          "security": "삼성전자",
+          "current_value": 21995200.0,
+          "portfolio_weight": 14.675255299248551
+        },
+        {
+          "security": "ACE 미국나스닥100",
+          "current_value": 15404725.0,
+          "portfolio_weight": 10.278073042741902
+        },
+        {
+          "security": "삼성전자",
+          "current_value": 9440000.0,
+          "portfolio_weight": 6.298392832295516
+        }
+      ]
+    }
+  },
+  "accounts": [
+    {
+      "account_name": "민호 NH ISA",
+      "owner": "민호",
+      "broker": "NH",
+      "account_type": "ISA"
+    },
+    {
+      "account_name": "민호 NH 연금저축",
+      "owner": "민호",
+      "broker": "NH",
+      "account_type": "연금저축"
+    },
+    {
+      "account_name": "민호 NH 종합매매",
+      "owner": "민호",
+      "broker": "NH",
+      "account_type": "종합매매"
+    },
+    {
+      "account_name": "민호 신한 종합매매",
+      "owner": "민호",
+      "broker": "신한",
+      "account_type": "종합매매"
+    },
+    {
+      "account_name": "민호 키움 종합매매",
+      "owner": "민호",
+      "broker": "키움",
+      "account_type": "종합매매"
+    },
+    {
+      "account_name": "민호 키움 종합매매 해외",
+      "owner": "민호",
+      "broker": "키움",
+      "account_type": "종합매매 해외"
+    },
+    {
+      "account_name": "민호 토스 종합매매",
+      "owner": "민호",
+      "broker": "토스",
+      "account_type": "종합매매"
+    },
+    {
+      "account_name": "민호 토스 종합매매 해외",
+      "owner": "민호",
+      "broker": "토스",
+      "account_type": "종합매매 해외"
+    },
+    {
+      "account_name": "유신 키움 연금저축",
+      "owner": "유신",
+      "broker": "키움",
+      "account_type": "연금저축"
+    },
+    {
+      "account_name": "유신 키움 종합매매",
+      "owner": "유신",
+      "broker": "키움",
+      "account_type": "종합매매"
+    },
+    {
+      "account_name": "혜란 키움 연금저축",
+      "owner": "혜란",
+      "broker": "키움",
+      "account_type": "연금저축"
+    },
+    {
+      "account_name": "혜란 키움 종합매매",
+      "owner": "혜란",
+      "broker": "키움",
+      "account_type": "종합매매"
+    }
+  ],
+  "holdings": [
+    {
+      "account": "민호 NH ISA",
+      "security": "KODEX 고배당주",
+      "shares": 16.0,
+      "avg_price": 12320.0,
+      "total_cost": 197120.0,
+      "current_price": 12950.0,
+      "current_value": 207200.0,
+      "unrealized_gain_loss": 10080.0,
+      "unrealized_gain_loss_rate": 5.113636363636364
+    },
+    {
+      "account": "민호 NH ISA",
+      "security": "KODEX 200",
+      "shares": 5.0,
+      "avg_price": 39190.0,
+      "total_cost": 195950.0,
+      "current_price": 50830.0,
+      "current_value": 254150.0,
+      "unrealized_gain_loss": 58200.0,
+      "unrealized_gain_loss_rate": 29.701454452666496
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "ACE 미국나스닥100",
+      "shares": 1506.0,
+      "avg_price": 15383.711819389111,
+      "total_cost": 23167870.0,
+      "current_price": 27265.0,
+      "current_value": 41061090.0,
+      "unrealized_gain_loss": 17893220.0,
+      "unrealized_gain_loss_rate": 77.23290919709062
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "ACE 미국S&P500",
+      "shares": 1680.0,
+      "avg_price": 17269.45535714286,
+      "total_cost": 29012685.0,
+      "current_price": 24085.0,
+      "current_value": 40462800.0,
+      "unrealized_gain_loss": 11450115.0,
+      "unrealized_gain_loss_rate": 39.46589224678792
+    },
+    {
+      "account": "민호 신한 종합매매",
+      "security": "삼성전자",
+      "shares": 30.0,
+      "avg_price": 54700.0,
+      "total_cost": 1641000.0,
+      "current_price": 94400.0,
+      "current_value": 2832000.0,
+      "unrealized_gain_loss": 1191000.0,
+      "unrealized_gain_loss_rate": 72.57769652650823
+    },
+    {
+      "account": "민호 신한 종합매매",
+      "security": "KODEX 고배당주",
+      "shares": 33.0,
+      "avg_price": 12205.0,
+      "total_cost": 402765.0,
+      "current_price": 12950.0,
+      "current_value": 427350.0,
+      "unrealized_gain_loss": 24585.0,
+      "unrealized_gain_loss_rate": 6.104055714870955
+    },
+    {
+      "account": "민호 키움 종합매매",
+      "security": "삼성전자",
+      "shares": 233.0,
+      "avg_price": 83579.0,
+      "total_cost": 19473907.0,
+      "current_price": 94400.0,
+      "current_value": 21995200.0,
+      "unrealized_gain_loss": 2521293.0,
+      "unrealized_gain_loss_rate": 12.94703214922409
+    },
+    {
+      "account": "민호 토스 종합매매",
+      "security": "기업은행",
+      "shares": 1.0,
+      "avg_price": 9150.0,
+      "total_cost": 9150.0,
+      "current_price": 18970.0,
+      "current_value": 18970.0,
+      "unrealized_gain_loss": 9820.0,
+      "unrealized_gain_loss_rate": 107.3224043715847
+    },
+    {
+      "account": "민호 토스 종합매매",
+      "security": "GS글로벌",
+      "shares": 1.0,
+      "avg_price": 2835.0,
+      "total_cost": 2835.0,
+      "current_price": 2460.0,
+      "current_value": 2460.0,
+      "unrealized_gain_loss": -375.0,
+      "unrealized_gain_loss_rate": -13.227513227513226
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "ACE 미국나스닥100",
+      "shares": 565.0,
+      "avg_price": 24017.867256637168,
+      "total_cost": 13570095.0,
+      "current_price": 27265.0,
+      "current_value": 15404725.0,
+      "unrealized_gain_loss": 1834630.0,
+      "unrealized_gain_loss_rate": 13.519654799763744
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "SOL 미국S&P500",
+      "shares": 473.0,
+      "avg_price": 15152.040169133192,
+      "total_cost": 7166915.0,
+      "current_price": 19900.0,
+      "current_value": 9412700.0,
+      "unrealized_gain_loss": 2245785.0,
+      "unrealized_gain_loss_rate": 31.335449073973948
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "RISE 미국S&P500",
+      "shares": 210.0,
+      "avg_price": 20273.266666666666,
+      "total_cost": 4257386.0,
+      "current_price": 20775.0,
+      "current_value": 4362750.0,
+      "unrealized_gain_loss": 105364.0,
+      "unrealized_gain_loss_rate": 2.4748519396643855
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "ACE 미국S&P500",
+      "shares": 79.0,
+      "avg_price": 23455.25316455696,
+      "total_cost": 1852965.0,
+      "current_price": 24085.0,
+      "current_value": 1902715.0,
+      "unrealized_gain_loss": 49750.0,
+      "unrealized_gain_loss_rate": 2.6848861149562997
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "security": "삼성전자",
+      "shares": 100.0,
+      "avg_price": 50119.32773109243,
+      "total_cost": 5011932.773109243,
+      "current_price": 94400.0,
+      "current_value": 9440000.0,
+      "unrealized_gain_loss": 4428067.226890757,
+      "unrealized_gain_loss_rate": 88.35049126454514
+    },
+    {
+      "account": "혜란 키움 종합매매",
+      "security": "ACE 미국S&P500",
+      "shares": 87.0,
+      "avg_price": 13127.0,
+      "total_cost": 1142049.0,
+      "current_price": 24085.0,
+      "current_value": 2095395.0,
+      "unrealized_gain_loss": 953346.0,
+      "unrealized_gain_loss_rate": 83.47680353469947
+    }
+  ],
+  "balances": [
+    {
+      "account": "민호 NH ISA",
+      "cash_balance": 29131.0,
+      "stock_value": 393070.0,
+      "total_balance": 422201.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "cash_balance": 77889.0,
+      "stock_value": 52180555.0,
+      "total_balance": 52258444.0
+    },
+    {
+      "account": "민호 NH 종합매매",
+      "cash_balance": 1.0,
+      "stock_value": 0,
+      "total_balance": 1.0
+    },
+    {
+      "account": "민호 신한 종합매매",
+      "cash_balance": 16255.0,
+      "stock_value": 2043765.0,
+      "total_balance": 2060020.0
+    },
+    {
+      "account": "민호 키움 종합매매",
+      "cash_balance": 0.0,
+      "stock_value": 19473907.0,
+      "total_balance": 19473907.0
+    },
+    {
+      "account": "민호 키움 종합매매 해외",
+      "cash_balance": 0.0,
+      "stock_value": 0,
+      "total_balance": 0.0
+    },
+    {
+      "account": "민호 토스 종합매매",
+      "cash_balance": 327062.0,
+      "stock_value": 11985.0,
+      "total_balance": 339047.0
+    },
+    {
+      "account": "민호 토스 종합매매 해외",
+      "cash_balance": 0.0,
+      "stock_value": 0,
+      "total_balance": 0.0
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "cash_balance": 14763.0,
+      "stock_value": 26847361.0,
+      "total_balance": 26862124.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "cash_balance": 0.0,
+      "stock_value": 5011932.773109243,
+      "total_balance": 5011932.773109243
+    },
+    {
+      "account": "혜란 키움 연금저축",
+      "cash_balance": 4332006.0,
+      "stock_value": 0,
+      "total_balance": 4332006.0
+    },
+    {
+      "account": "혜란 키움 종합매매",
+      "cash_balance": 0.0,
+      "stock_value": 1142049.0,
+      "total_balance": 1142049.0
+    }
+  ],
+  "total_balance": {
+    "total_cash_balance": 4797107.0,
+    "total_stock_value": 107104624.77310924,
+    "total_balance": 111901731.77310924,
+    "account_count": 12
+  },
+  "yearly_returns": [
+    {
+      "year": 2020,
+      "total_dividend": 206994.0,
+      "total_sell_profit": 0.0,
+      "total_sell_revenue": 0.0,
+      "total_sell_cost": 0.0,
+      "total_interest": 375.0,
+      "total_returns": 207369.0,
+      "by_security": {
+        "삼성전자": {
+          "dividend": 206994.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        }
+      },
+      "by_owner_and_account": {
+        "민호": {
+          "ISA": {},
+          "연금저축": {},
+          "종합매매": {},
+          "종합매매 해외": {}
+        },
+        "유신": {
+          "연금저축": {},
+          "종합매매": {
+            "유신 키움 종합매매": {
+              "dividend": 206994.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 375.0,
+              "total": 207369.0,
+              "securities": {
+                "삼성전자": {
+                  "dividend": 206994.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          }
+        },
+        "혜란": {
+          "연금저축": {},
+          "종합매매": {}
+        }
+      }
+    },
+    {
+      "year": 2021,
+      "total_dividend": 596263.0,
+      "total_sell_profit": 0.0,
+      "total_sell_revenue": 0.0,
+      "total_sell_cost": 0.0,
+      "total_interest": 219.0,
+      "total_returns": 596482.0,
+      "by_security": {
+        "ACE 미국S&P500": {
+          "dividend": 490.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "삼성전자": {
+          "dividend": 595773.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        }
+      },
+      "by_owner_and_account": {
+        "민호": {
+          "ISA": {},
+          "연금저축": {},
+          "종합매매": {
+            "민호 토스 종합매매": {
+              "dividend": 0.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 90.0,
+              "total": 90.0,
+              "securities": {}
+            }
+          },
+          "종합매매 해외": {}
+        },
+        "유신": {
+          "연금저축": {},
+          "종합매매": {
+            "유신 키움 종합매매": {
+              "dividend": 596263.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 129.0,
+              "total": 596392.0,
+              "securities": {
+                "ACE 미국S&P500": {
+                  "dividend": 490.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "삼성전자": {
+                  "dividend": 595773.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          }
+        },
+        "혜란": {
+          "연금저축": {},
+          "종합매매": {}
+        }
+      }
+    },
+    {
+      "year": 2022,
+      "total_dividend": 332856.0,
+      "total_sell_profit": 2407236.9322033897,
+      "total_sell_revenue": 9840306.0,
+      "total_sell_cost": 7433069.06779661,
+      "total_interest": 43633.0,
+      "total_returns": 2783725.9322033897,
+      "by_security": {
+        "ACE 미국S&P500": {
+          "dividend": 101130.0,
+          "sell_profit": -2355.0,
+          "sell_revenue": 548120.0,
+          "sell_cost": 550475.0,
+          "interest": 0
+        },
+        "ACE 미국나스닥100": {
+          "dividend": 24450.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "기업은행": {
+          "dividend": 780.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "삼성전자": {
+          "dividend": 206496.0,
+          "sell_profit": 2409591.9322033897,
+          "sell_revenue": 9292186.0,
+          "sell_cost": 6882594.06779661,
+          "interest": 0
+        }
+      },
+      "by_owner_and_account": {
+        "민호": {
+          "ISA": {},
+          "연금저축": {
+            "민호 NH 연금저축": {
+              "dividend": 122500.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 43556.0,
+              "total": 166056.0,
+              "securities": {
+                "ACE 미국S&P500": {
+                  "dividend": 98050.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "ACE 미국나스닥100": {
+                  "dividend": 24450.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          },
+          "종합매매": {
+            "민호 토스 종합매매": {
+              "dividend": 780.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 0.0,
+              "total": 780.0,
+              "securities": {
+                "기업은행": {
+                  "dividend": 780.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          },
+          "종합매매 해외": {}
+        },
+        "유신": {
+          "연금저축": {},
+          "종합매매": {
+            "유신 키움 종합매매": {
+              "dividend": 209576.0,
+              "sell_profit": 2407236.9322033897,
+              "sell_revenue": 9840306.0,
+              "sell_cost": 7433069.06779661,
+              "interest": 77.0,
+              "total": 2616889.9322033897,
+              "securities": {
+                "ACE 미국S&P500": {
+                  "dividend": 3080.0,
+                  "sell_profit": -2355.0,
+                  "sell_revenue": 548120.0,
+                  "sell_cost": 550475.0,
+                  "sell_shares": 40.0
+                },
+                "삼성전자": {
+                  "dividend": 206496.0,
+                  "sell_profit": 2409591.9322033897,
+                  "sell_revenue": 9292186.0,
+                  "sell_cost": 6882594.06779661,
+                  "sell_shares": 138.0
+                }
+              }
+            }
+          }
+        },
+        "혜란": {
+          "연금저축": {},
+          "종합매매": {}
+        }
+      }
+    },
+    {
+      "year": 2023,
+      "total_dividend": 535902.0,
+      "total_sell_profit": 9922218.0,
+      "total_sell_revenue": 72024593.0,
+      "total_sell_cost": 62102375.0,
+      "total_interest": 25748.0,
+      "total_returns": 10483868.0,
+      "by_security": {
+        "ACE 미국S&P500": {
+          "dividend": 211320.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "ACE 미국나스닥100": {
+          "dividend": 78800.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "SOL 미국S&P500": {
+          "dividend": 48102.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "TIGER 리츠부동산인프라": {
+          "dividend": 68600.0,
+          "sell_profit": -1950.0,
+          "sell_revenue": 44000.0,
+          "sell_cost": 45950.0,
+          "interest": 0
+        },
+        "TIGER 미국S&P500": {
+          "dividend": 5920.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "기업은행": {
+          "dividend": 960.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "삼성전자": {
+          "dividend": 122200.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "포스코엠텍": {
+          "dividend": 0,
+          "sell_profit": -351726.0,
+          "sell_revenue": 13429474.0,
+          "sell_cost": 13781200.0,
+          "interest": 0
+        },
+        "제이오": {
+          "dividend": 0,
+          "sell_profit": -80503.0,
+          "sell_revenue": 13557997.0,
+          "sell_cost": 13638500.0,
+          "interest": 0
+        },
+        "포스코인터내셔널": {
+          "dividend": 0,
+          "sell_profit": 329955.0,
+          "sell_revenue": 13905055.0,
+          "sell_cost": 13575100.0,
+          "interest": 0
+        },
+        "금양": {
+          "dividend": 0,
+          "sell_profit": 3977335.0,
+          "sell_revenue": 8664535.0,
+          "sell_cost": 4687200.0,
+          "interest": 0
+        },
+        "두산": {
+          "dividend": 0,
+          "sell_profit": 1733220.0,
+          "sell_revenue": 10389620.0,
+          "sell_cost": 8656400.0,
+          "interest": 0
+        },
+        "가온칩스": {
+          "dividend": 0,
+          "sell_profit": 13433.0,
+          "sell_revenue": 2967683.0,
+          "sell_cost": 2954250.0,
+          "interest": 0
+        },
+        "포스코DX": {
+          "dividend": 0,
+          "sell_profit": 3413470.0,
+          "sell_revenue": 3413470.0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "유햔양행": {
+          "dividend": 0,
+          "sell_profit": 891504.0,
+          "sell_revenue": 5616504.0,
+          "sell_cost": 4725000.0,
+          "interest": 0
+        },
+        "ACE 테슬라밸류체인액티브": {
+          "dividend": 0,
+          "sell_profit": -2520.0,
+          "sell_revenue": 36255.0,
+          "sell_cost": 38775.0,
+          "interest": 0
+        }
+      },
+      "by_owner_and_account": {
+        "민호": {
+          "ISA": {
+            "민호 NH ISA": {
+              "dividend": 0.0,
+              "sell_profit": 4318407.0,
+              "sell_revenue": 11997657.0,
+              "sell_cost": 7679250.0,
+              "interest": 2221.0,
+              "total": 4320628.0,
+              "securities": {
+                "가온칩스": {
+                  "dividend": 0,
+                  "sell_profit": 13433.0,
+                  "sell_revenue": 2967683.0,
+                  "sell_cost": 2954250.0,
+                  "sell_shares": 65.0
+                },
+                "포스코DX": {
+                  "dividend": 0,
+                  "sell_profit": 3413470.0,
+                  "sell_revenue": 3413470.0,
+                  "sell_cost": 0,
+                  "sell_shares": 99.0
+                },
+                "유햔양행": {
+                  "dividend": 0,
+                  "sell_profit": 891504.0,
+                  "sell_revenue": 5616504.0,
+                  "sell_cost": 4725000.0,
+                  "sell_shares": 70.0
+                }
+              }
+            }
+          },
+          "연금저축": {
+            "민호 NH 연금저축": {
+              "dividend": 405162.0,
+              "sell_profit": -2520.0,
+              "sell_revenue": 36255.0,
+              "sell_cost": 38775.0,
+              "interest": 19776.0,
+              "total": 422418.0,
+              "securities": {
+                "ACE 미국S&P500": {
+                  "dividend": 211320.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "ACE 미국나스닥100": {
+                  "dividend": 78800.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "SOL 미국S&P500": {
+                  "dividend": 47072.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "TIGER 리츠부동산인프라": {
+                  "dividend": 67970.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "ACE 테슬라밸류체인액티브": {
+                  "dividend": 0,
+                  "sell_profit": -2520.0,
+                  "sell_revenue": 36255.0,
+                  "sell_cost": 38775.0,
+                  "sell_shares": 3.0
+                }
+              }
+            }
+          },
+          "종합매매": {
+            "민호 토스 종합매매": {
+              "dividend": 960.0,
+              "sell_profit": -588243.0,
+              "sell_revenue": 27550457.0,
+              "sell_cost": 28138700.0,
+              "interest": 718.0,
+              "total": -586565.0,
+              "securities": {
+                "기업은행": {
+                  "dividend": 960.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "포스코엠텍": {
+                  "dividend": 0,
+                  "sell_profit": -846486.0,
+                  "sell_revenue": 9138714.0,
+                  "sell_cost": 9985200.0,
+                  "sell_shares": 424.0
+                },
+                "제이오": {
+                  "dividend": 0,
+                  "sell_profit": -96542.0,
+                  "sell_revenue": 9026958.0,
+                  "sell_cost": 9123500.0,
+                  "sell_shares": 257.0
+                },
+                "포스코인터내셔널": {
+                  "dividend": 0,
+                  "sell_profit": 354785.0,
+                  "sell_revenue": 9384785.0,
+                  "sell_cost": 9030000.0,
+                  "sell_shares": 300.0
+                }
+              }
+            }
+          },
+          "종합매매 해외": {}
+        },
+        "유신": {
+          "연금저축": {},
+          "종합매매": {
+            "유신 키움 종합매매": {
+              "dividend": 129780.0,
+              "sell_profit": 6194574.0,
+              "sell_revenue": 32440224.0,
+              "sell_cost": 26245650.0,
+              "interest": 3033.0,
+              "total": 6327387.0,
+              "securities": {
+                "SOL 미국S&P500": {
+                  "dividend": 1030.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "TIGER 리츠부동산인프라": {
+                  "dividend": 630.0,
+                  "sell_profit": -1950.0,
+                  "sell_revenue": 44000.0,
+                  "sell_cost": 45950.0,
+                  "sell_shares": 10.0
+                },
+                "TIGER 미국S&P500": {
+                  "dividend": 5920.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "삼성전자": {
+                  "dividend": 122200.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "포스코엠텍": {
+                  "dividend": 0,
+                  "sell_profit": 494760.0,
+                  "sell_revenue": 4290760.0,
+                  "sell_cost": 3796000.0,
+                  "sell_shares": 200.0
+                },
+                "제이오": {
+                  "dividend": 0,
+                  "sell_profit": 16039.0,
+                  "sell_revenue": 4531039.0,
+                  "sell_cost": 4515000.0,
+                  "sell_shares": 129.0
+                },
+                "포스코인터내셔널": {
+                  "dividend": 0,
+                  "sell_profit": -24830.0,
+                  "sell_revenue": 4520270.0,
+                  "sell_cost": 4545100.0,
+                  "sell_shares": 151.0
+                },
+                "금양": {
+                  "dividend": 0,
+                  "sell_profit": 3977335.0,
+                  "sell_revenue": 8664535.0,
+                  "sell_cost": 4687200.0,
+                  "sell_shares": 54.0
+                },
+                "두산": {
+                  "dividend": 0,
+                  "sell_profit": 1733220.0,
+                  "sell_revenue": 10389620.0,
+                  "sell_cost": 8656400.0,
+                  "sell_shares": 76.0
+                }
+              }
+            }
+          }
+        },
+        "혜란": {
+          "연금저축": {},
+          "종합매매": {}
+        }
+      }
+    },
+    {
+      "year": 2024,
+      "total_dividend": 965296.91,
+      "total_sell_profit": 653998.5526695529,
+      "total_sell_revenue": 17416759.0,
+      "total_sell_cost": 16762760.447330449,
+      "total_interest": 42254.0,
+      "total_returns": 1661549.4626695528,
+      "by_security": {
+        "ACE 미국S&P500": {
+          "dividend": 248675.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "ACE 미국나스닥100": {
+          "dividend": 168925.0,
+          "sell_profit": 408840.00000000093,
+          "sell_revenue": 6688140.0,
+          "sell_cost": 6279299.999999999,
+          "interest": 0
+        },
+        "GS글로벌": {
+          "dividend": 25.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "RISE 미국S&P500(H)": {
+          "dividend": 868.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "SOL 미국S&P500": {
+          "dividend": 168780.0,
+          "sell_profit": 707813.8383838376,
+          "sell_revenue": 7304000.0,
+          "sell_cost": 6596186.161616162,
+          "interest": 0
+        },
+        "TIGER 리츠부동산인프라": {
+          "dividend": 150750.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "TIGER 미국S&P500": {
+          "dividend": 7520.0,
+          "sell_profit": 195965.71428571426,
+          "sell_revenue": 701240.0,
+          "sell_cost": 505274.28571428574,
+          "interest": 0
+        },
+        "TIGER 미국배당다우존스": {
+          "dividend": 96564.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "Vanguard S&P 500 ETF": {
+          "dividend": 5.91,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "기업은행": {
+          "dividend": 984.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "삼성전자": {
+          "dividend": 122200.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "코난테크놀로지": {
+          "dividend": 0,
+          "sell_profit": -658621.0,
+          "sell_revenue": 2723379.0,
+          "sell_cost": 3382000.0,
+          "interest": 0
+        }
+      },
+      "by_owner_and_account": {
+        "민호": {
+          "ISA": {
+            "민호 NH ISA": {
+              "dividend": 868.0,
+              "sell_profit": -658621.0,
+              "sell_revenue": 2723379.0,
+              "sell_cost": 3382000.0,
+              "interest": 2354.0,
+              "total": -655399.0,
+              "securities": {
+                "RISE 미국S&P500(H)": {
+                  "dividend": 868.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "코난테크놀로지": {
+                  "dividend": 0,
+                  "sell_profit": -658621.0,
+                  "sell_revenue": 2723379.0,
+                  "sell_cost": 3382000.0,
+                  "sell_shares": 76.0
+                }
+              }
+            }
+          },
+          "연금저축": {
+            "민호 NH 연금저축": {
+              "dividend": 642806.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 1551.0,
+              "total": 644357.0,
+              "securities": {
+                "ACE 미국S&P500": {
+                  "dividend": 248675.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "ACE 미국나스닥100": {
+                  "dividend": 146865.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "SOL 미국S&P500": {
+                  "dividend": 96516.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "TIGER 리츠부동산인프라": {
+                  "dividend": 150750.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          },
+          "종합매매": {
+            "민호 토스 종합매매": {
+              "dividend": 1009.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 0.0,
+              "total": 1009.0,
+              "securities": {
+                "GS글로벌": {
+                  "dividend": 25.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "기업은행": {
+                  "dividend": 984.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          },
+          "종합매매 해외": {
+            "민호 토스 종합매매 해외": {
+              "dividend": 5.91,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 0.0,
+              "total": 5.91,
+              "securities": {
+                "Vanguard S&P 500 ETF": {
+                  "dividend": 5.91,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          }
+        },
+        "유신": {
+          "연금저축": {
+            "유신 키움 연금저축": {
+              "dividend": 131086.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 1129.0,
+              "total": 132215.0,
+              "securities": {
+                "ACE 미국나스닥100": {
+                  "dividend": 6685.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "SOL 미국S&P500": {
+                  "dividend": 27837.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "TIGER 미국배당다우존스": {
+                  "dividend": 96564.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          },
+          "종합매매": {
+            "유신 키움 종합매매": {
+              "dividend": 189522.0,
+              "sell_profit": 1312619.5526695529,
+              "sell_revenue": 14693380.0,
+              "sell_cost": 13380760.447330447,
+              "interest": 37220.0,
+              "total": 1539361.5526695529,
+              "securities": {
+                "ACE 미국나스닥100": {
+                  "dividend": 15375.0,
+                  "sell_profit": 408840.00000000093,
+                  "sell_revenue": 6688140.0,
+                  "sell_cost": 6279299.999999999,
+                  "sell_shares": 350.0
+                },
+                "SOL 미국S&P500": {
+                  "dividend": 44427.0,
+                  "sell_profit": 707813.8383838376,
+                  "sell_revenue": 7304000.0,
+                  "sell_cost": 6596186.161616162,
+                  "sell_shares": 485.0
+                },
+                "TIGER 미국S&P500": {
+                  "dividend": 7520.0,
+                  "sell_profit": 195965.71428571426,
+                  "sell_revenue": 701240.0,
+                  "sell_cost": 505274.28571428574,
+                  "sell_shares": 40.0
+                },
+                "삼성전자": {
+                  "dividend": 122200.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          }
+        },
+        "혜란": {
+          "연금저축": {},
+          "종합매매": {}
+        }
+      }
+    },
+    {
+      "year": 2025,
+      "total_dividend": 1006345.1100000001,
+      "total_sell_profit": 6354186.469874248,
+      "total_sell_revenue": 34583016.95,
+      "total_sell_cost": 28228830.480125755,
+      "total_interest": 1750.0,
+      "total_returns": 7362281.579874248,
+      "by_security": {
+        "ACE 미국S&P500": {
+          "dividend": 185302.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "ACE 미국나스닥100": {
+          "dividend": 155680.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "GS글로벌": {
+          "dividend": 25.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "KODEX 200": {
+          "dividend": 1936.0,
+          "sell_profit": 58855.0,
+          "sell_revenue": 609060.0,
+          "sell_cost": 550205.0,
+          "interest": 0
+        },
+        "KODEX 고배당주": {
+          "dividend": 9374.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "RISE 미국S&P500": {
+          "dividend": 106131.0,
+          "sell_profit": 1356778.6327437926,
+          "sell_revenue": 11033500.0,
+          "sell_cost": 9676721.367256207,
+          "interest": 0
+        },
+        "RISE 미국S&P500(H)": {
+          "dividend": 2352.0,
+          "sell_profit": 7380.0,
+          "sell_revenue": 408340.0,
+          "sell_cost": 400960.0,
+          "interest": 0
+        },
+        "SOL 미국S&P500": {
+          "dividend": 145409.0,
+          "sell_profit": 4680446.6465863455,
+          "sell_revenue": 12111910.0,
+          "sell_cost": 7431463.3534136545,
+          "interest": 0
+        },
+        "TIGER 리츠부동산인프라": {
+          "dividend": 117900.0,
+          "sell_profit": -84090.00000000023,
+          "sell_revenue": 1955160.0,
+          "sell_cost": 2039250.0000000002,
+          "interest": 0
+        },
+        "TIGER 미국배당다우존스": {
+          "dividend": 179176.0,
+          "sell_profit": 303204.4572107764,
+          "sell_revenue": 8134935.0,
+          "sell_cost": 7831730.542789224,
+          "interest": 0
+        },
+        "Vanguard S&P 500 ETF": {
+          "dividend": 15.11,
+          "sell_profit": 349.7333333333336,
+          "sell_revenue": 3049.95,
+          "sell_cost": 2700.2166666666662,
+          "interest": 0
+        },
+        "기업은행": {
+          "dividend": 1065.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "삼성전자": {
+          "dividend": 101980.0,
+          "sell_profit": 0,
+          "sell_revenue": 0,
+          "sell_cost": 0,
+          "interest": 0
+        },
+        "PS일렉트로닉스": {
+          "dividend": 0,
+          "sell_profit": 31262.0,
+          "sell_revenue": 327062.0,
+          "sell_cost": 295800.0,
+          "interest": 0
+        }
+      },
+      "by_owner_and_account": {
+        "민호": {
+          "ISA": {
+            "민호 NH ISA": {
+              "dividend": 6864.0,
+              "sell_profit": 7380.0,
+              "sell_revenue": 408340.0,
+              "sell_cost": 400960.0,
+              "interest": 139.0,
+              "total": 14383.0,
+              "securities": {
+                "KODEX 200": {
+                  "dividend": 880.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "KODEX 고배당주": {
+                  "dividend": 3632.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "RISE 미국S&P500(H)": {
+                  "dividend": 2352.0,
+                  "sell_profit": 7380.0,
+                  "sell_revenue": 408340.0,
+                  "sell_cost": 400960.0,
+                  "sell_shares": 28.0
+                }
+              }
+            }
+          },
+          "연금저축": {
+            "민호 NH 연금저축": {
+              "dividend": 550186.0,
+              "sell_profit": 5099347.568916443,
+              "sell_revenue": 18830695.0,
+              "sell_cost": 13731347.431083556,
+              "interest": 1135.0,
+              "total": 5650668.568916443,
+              "securities": {
+                "ACE 미국S&P500": {
+                  "dividend": 185302.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "ACE 미국나스닥100": {
+                  "dividend": 135555.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "KODEX 200": {
+                  "dividend": 880.0,
+                  "sell_profit": 45605.0,
+                  "sell_revenue": 468230.0,
+                  "sell_cost": 422625.0,
+                  "sell_shares": 10.0
+                },
+                "RISE 미국S&P500": {
+                  "dividend": 26278.0,
+                  "sell_profit": 443805.9223300973,
+                  "sell_revenue": 3991030.0,
+                  "sell_cost": 3547224.0776699027,
+                  "sell_shares": 197.0
+                },
+                "SOL 미국S&P500": {
+                  "dividend": 82500.0,
+                  "sell_profit": 4680446.6465863455,
+                  "sell_revenue": 12111910.0,
+                  "sell_cost": 7431463.3534136545,
+                  "sell_shares": 625.0
+                },
+                "TIGER 리츠부동산인프라": {
+                  "dividend": 117900.0,
+                  "sell_profit": -84090.00000000023,
+                  "sell_revenue": 1955160.0,
+                  "sell_cost": 2039250.0000000002,
+                  "sell_shares": 450.0
+                },
+                "TIGER 미국배당다우존스": {
+                  "dividend": 1771.0,
+                  "sell_profit": 13580.0,
+                  "sell_revenue": 304365.0,
+                  "sell_cost": 290785.0,
+                  "sell_shares": 25.0
+                }
+              }
+            }
+          },
+          "종합매매": {
+            "민호 신한 종합매매": {
+              "dividend": 15062.0,
+              "sell_profit": 0.0,
+              "sell_revenue": 0.0,
+              "sell_cost": 0.0,
+              "interest": 18.0,
+              "total": 15080.0,
+              "securities": {
+                "KODEX 고배당주": {
+                  "dividend": 5742.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "삼성전자": {
+                  "dividend": 9320.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            },
+            "민호 토스 종합매매": {
+              "dividend": 1090.0,
+              "sell_profit": 31262.0,
+              "sell_revenue": 327062.0,
+              "sell_cost": 295800.0,
+              "interest": 34.0,
+              "total": 32386.0,
+              "securities": {
+                "GS글로벌": {
+                  "dividend": 25.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "기업은행": {
+                  "dividend": 1065.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "PS일렉트로닉스": {
+                  "dividend": 0,
+                  "sell_profit": 31262.0,
+                  "sell_revenue": 327062.0,
+                  "sell_cost": 295800.0,
+                  "sell_shares": 60.0
+                }
+              }
+            }
+          },
+          "종합매매 해외": {
+            "민호 토스 종합매매 해외": {
+              "dividend": 15.11,
+              "sell_profit": 349.7333333333336,
+              "sell_revenue": 3049.95,
+              "sell_cost": 2700.2166666666662,
+              "interest": 0.0,
+              "total": 364.8433333333336,
+              "securities": {
+                "Vanguard S&P 500 ETF": {
+                  "dividend": 15.11,
+                  "sell_profit": 349.7333333333336,
+                  "sell_revenue": 3049.95,
+                  "sell_cost": 2700.2166666666662,
+                  "sell_shares": 5.0
+                }
+              }
+            }
+          }
+        },
+        "유신": {
+          "연금저축": {
+            "유신 키움 연금저축": {
+              "dividend": 265969.0,
+              "sell_profit": 302874.4572107764,
+              "sell_revenue": 7971400.0,
+              "sell_cost": 7668525.542789224,
+              "interest": 291.0,
+              "total": 569134.4572107764,
+              "securities": {
+                "ACE 미국나스닥100": {
+                  "dividend": 20125.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "KODEX 200": {
+                  "dividend": 176.0,
+                  "sell_profit": 13250.0,
+                  "sell_revenue": 140830.0,
+                  "sell_cost": 127580.0,
+                  "sell_shares": 3.0
+                },
+                "RISE 미국S&P500": {
+                  "dividend": 5354.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "SOL 미국S&P500": {
+                  "dividend": 62909.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                },
+                "TIGER 미국배당다우존스": {
+                  "dividend": 177405.0,
+                  "sell_profit": 289624.4572107764,
+                  "sell_revenue": 7830570.0,
+                  "sell_cost": 7540945.542789224,
+                  "sell_shares": 643.0
+                }
+              }
+            }
+          },
+          "종합매매": {
+            "유신 키움 종합매매": {
+              "dividend": 167159.0,
+              "sell_profit": 912972.7104136953,
+              "sell_revenue": 7042470.0,
+              "sell_cost": 6129497.289586305,
+              "interest": 133.0,
+              "total": 1080264.7104136953,
+              "securities": {
+                "RISE 미국S&P500": {
+                  "dividend": 74499.0,
+                  "sell_profit": 912972.7104136953,
+                  "sell_revenue": 7042470.0,
+                  "sell_cost": 6129497.289586305,
+                  "sell_shares": 356.0
+                },
+                "삼성전자": {
+                  "dividend": 92660.0,
+                  "sell_profit": 0,
+                  "sell_revenue": 0,
+                  "sell_cost": 0,
+                  "sell_shares": 0
+                }
+              }
+            }
+          }
+        },
+        "혜란": {
+          "연금저축": {},
+          "종합매매": {}
+        }
+      }
+    }
+  ],
+  "dividends": [
+    {
+      "account": "민호 NH ISA",
+      "security": "KODEX 200",
+      "total_dividend": 880.0
+    },
+    {
+      "account": "민호 NH ISA",
+      "security": "KODEX 고배당주",
+      "total_dividend": 3632.0
+    },
+    {
+      "account": "민호 NH ISA",
+      "security": "RISE 미국S&P500(H)",
+      "total_dividend": 3220.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "ACE 미국S&P500",
+      "total_dividend": 743347.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "ACE 미국나스닥100",
+      "total_dividend": 385670.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "KODEX 200",
+      "total_dividend": 880.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "RISE 미국S&P500",
+      "total_dividend": 26278.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "SOL 미국S&P500",
+      "total_dividend": 226088.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "TIGER 리츠부동산인프라",
+      "total_dividend": 336620.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "security": "TIGER 미국배당다우존스",
+      "total_dividend": 1771.0
+    },
+    {
+      "account": "민호 신한 종합매매",
+      "security": "KODEX 고배당주",
+      "total_dividend": 5742.0
+    },
+    {
+      "account": "민호 신한 종합매매",
+      "security": "삼성전자",
+      "total_dividend": 9320.0
+    },
+    {
+      "account": "민호 토스 종합매매",
+      "security": "GS글로벌",
+      "total_dividend": 50.0
+    },
+    {
+      "account": "민호 토스 종합매매",
+      "security": "기업은행",
+      "total_dividend": 3789.0
+    },
+    {
+      "account": "민호 토스 종합매매 해외",
+      "security": "Vanguard S&P 500 ETF",
+      "total_dividend": 21.02
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "ACE 미국나스닥100",
+      "total_dividend": 26810.0
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "KODEX 200",
+      "total_dividend": 176.0
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "RISE 미국S&P500",
+      "total_dividend": 5354.0
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "SOL 미국S&P500",
+      "total_dividend": 90746.0
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "security": "TIGER 미국배당다우존스",
+      "total_dividend": 273969.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "security": "ACE 미국S&P500",
+      "total_dividend": 3570.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "security": "ACE 미국나스닥100",
+      "total_dividend": 15375.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "security": "RISE 미국S&P500",
+      "total_dividend": 74499.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "security": "SOL 미국S&P500",
+      "total_dividend": 45457.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "security": "TIGER 리츠부동산인프라",
+      "total_dividend": 630.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "security": "TIGER 미국S&P500",
+      "total_dividend": 13440.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "security": "삼성전자",
+      "total_dividend": 1346323.0
+    }
+  ],
+  "interest": [
+    {
+      "account": "민호 NH ISA",
+      "total_interest": 4714.0
+    },
+    {
+      "account": "민호 NH 연금저축",
+      "total_interest": 66018.0
+    },
+    {
+      "account": "민호 신한 종합매매",
+      "total_interest": 18.0
+    },
+    {
+      "account": "민호 토스 종합매매",
+      "total_interest": 842.0
+    },
+    {
+      "account": "유신 키움 연금저축",
+      "total_interest": 1420.0
+    },
+    {
+      "account": "유신 키움 종합매매",
+      "total_interest": 40967.0
+    }
+  ],
+  "accounts_detailed": {
+    "accounts_by_owner_and_type": {
+      "민호": {
+        "ISA": [
+          {
+            "account_name": "ISA",
+            "full_account_name": "민호 NH ISA",
+            "owner": "민호",
+            "broker": "NH",
+            "balance": 29131.0,
+            "stock_value": 461350.0,
+            "total_balance": 490481.0,
+            "total_investment": 393070.0,
+            "total_gain_loss": 68280.0,
+            "holdings": [
+              {
+                "account": "민호 NH ISA",
+                "security": "KODEX 고배당주",
+                "shares": 16.0,
+                "avg_price": 12320.0,
+                "total_cost": 197120.0,
+                "current_price": 12950.0,
+                "current_value": 207200.0,
+                "unrealized_gain_loss": 10080.0,
+                "unrealized_gain_loss_rate": 5.113636363636364
+              },
+              {
+                "account": "민호 NH ISA",
+                "security": "KODEX 200",
+                "shares": 5.0,
+                "avg_price": 39190.0,
+                "total_cost": 195950.0,
+                "current_price": 50830.0,
+                "current_value": 254150.0,
+                "unrealized_gain_loss": 58200.0,
+                "unrealized_gain_loss_rate": 29.701454452666496
+              }
+            ]
+          }
+        ],
+        "연금저축": [
+          {
+            "account_name": "연금저축",
+            "full_account_name": "민호 NH 연금저축",
+            "owner": "민호",
+            "broker": "NH",
+            "balance": 77889.0,
+            "stock_value": 81523890.0,
+            "total_balance": 81601779.0,
+            "total_investment": 52180555.0,
+            "total_gain_loss": 29343335.0,
+            "holdings": [
+              {
+                "account": "민호 NH 연금저축",
+                "security": "ACE 미국나스닥100",
+                "shares": 1506.0,
+                "avg_price": 15383.711819389111,
+                "total_cost": 23167870.0,
+                "current_price": 27265.0,
+                "current_value": 41061090.0,
+                "unrealized_gain_loss": 17893220.0,
+                "unrealized_gain_loss_rate": 77.23290919709062
+              },
+              {
+                "account": "민호 NH 연금저축",
+                "security": "ACE 미국S&P500",
+                "shares": 1680.0,
+                "avg_price": 17269.45535714286,
+                "total_cost": 29012685.0,
+                "current_price": 24085.0,
+                "current_value": 40462800.0,
+                "unrealized_gain_loss": 11450115.0,
+                "unrealized_gain_loss_rate": 39.46589224678792
+              }
+            ]
+          }
+        ],
+        "종합매매": [
+          {
+            "account_name": "종합매매",
+            "full_account_name": "민호 NH 종합매매",
+            "owner": "민호",
+            "broker": "NH",
+            "balance": 1.0,
+            "stock_value": 0,
+            "total_balance": 1.0,
+            "total_investment": 0,
+            "total_gain_loss": 0,
+            "holdings": []
+          },
+          {
+            "account_name": "종합매매",
+            "full_account_name": "민호 신한 종합매매",
+            "owner": "민호",
+            "broker": "신한",
+            "balance": 16255.0,
+            "stock_value": 3259350.0,
+            "total_balance": 3275605.0,
+            "total_investment": 2043765.0,
+            "total_gain_loss": 1215585.0,
+            "holdings": [
+              {
+                "account": "민호 신한 종합매매",
+                "security": "삼성전자",
+                "shares": 30.0,
+                "avg_price": 54700.0,
+                "total_cost": 1641000.0,
+                "current_price": 94400.0,
+                "current_value": 2832000.0,
+                "unrealized_gain_loss": 1191000.0,
+                "unrealized_gain_loss_rate": 72.57769652650823
+              },
+              {
+                "account": "민호 신한 종합매매",
+                "security": "KODEX 고배당주",
+                "shares": 33.0,
+                "avg_price": 12205.0,
+                "total_cost": 402765.0,
+                "current_price": 12950.0,
+                "current_value": 427350.0,
+                "unrealized_gain_loss": 24585.0,
+                "unrealized_gain_loss_rate": 6.104055714870955
+              }
+            ]
+          },
+          {
+            "account_name": "종합매매",
+            "full_account_name": "민호 키움 종합매매",
+            "owner": "민호",
+            "broker": "키움",
+            "balance": 0.0,
+            "stock_value": 21995200.0,
+            "total_balance": 21995200.0,
+            "total_investment": 19473907.0,
+            "total_gain_loss": 2521293.0,
+            "holdings": [
+              {
+                "account": "민호 키움 종합매매",
+                "security": "삼성전자",
+                "shares": 233.0,
+                "avg_price": 83579.0,
+                "total_cost": 19473907.0,
+                "current_price": 94400.0,
+                "current_value": 21995200.0,
+                "unrealized_gain_loss": 2521293.0,
+                "unrealized_gain_loss_rate": 12.94703214922409
+              }
+            ]
+          },
+          {
+            "account_name": "종합매매",
+            "full_account_name": "민호 토스 종합매매",
+            "owner": "민호",
+            "broker": "토스",
+            "balance": 327062.0,
+            "stock_value": 21430.0,
+            "total_balance": 348492.0,
+            "total_investment": 11985.0,
+            "total_gain_loss": 9445.0,
+            "holdings": [
+              {
+                "account": "민호 토스 종합매매",
+                "security": "기업은행",
+                "shares": 1.0,
+                "avg_price": 9150.0,
+                "total_cost": 9150.0,
+                "current_price": 18970.0,
+                "current_value": 18970.0,
+                "unrealized_gain_loss": 9820.0,
+                "unrealized_gain_loss_rate": 107.3224043715847
+              },
+              {
+                "account": "민호 토스 종합매매",
+                "security": "GS글로벌",
+                "shares": 1.0,
+                "avg_price": 2835.0,
+                "total_cost": 2835.0,
+                "current_price": 2460.0,
+                "current_value": 2460.0,
+                "unrealized_gain_loss": -375.0,
+                "unrealized_gain_loss_rate": -13.227513227513226
+              }
+            ]
+          }
+        ],
+        "종합매매 해외": [
+          {
+            "account_name": "종합매매 해외",
+            "full_account_name": "민호 키움 종합매매 해외",
+            "owner": "민호",
+            "broker": "키움",
+            "balance": 0.0,
+            "stock_value": 0,
+            "total_balance": 0.0,
+            "total_investment": 0,
+            "total_gain_loss": 0,
+            "holdings": []
+          },
+          {
+            "account_name": "종합매매 해외",
+            "full_account_name": "민호 토스 종합매매 해외",
+            "owner": "민호",
+            "broker": "토스",
+            "balance": 0.0,
+            "stock_value": 0,
+            "total_balance": 0.0,
+            "total_investment": 0,
+            "total_gain_loss": 0,
+            "holdings": []
+          }
+        ]
+      },
+      "유신": {
+        "연금저축": [
+          {
+            "account_name": "연금저축",
+            "full_account_name": "유신 키움 연금저축",
+            "owner": "유신",
+            "broker": "키움",
+            "balance": 14763.0,
+            "stock_value": 31082890.0,
+            "total_balance": 31097653.0,
+            "total_investment": 26847361.0,
+            "total_gain_loss": 4235529.0,
+            "holdings": [
+              {
+                "account": "유신 키움 연금저축",
+                "security": "ACE 미국나스닥100",
+                "shares": 565.0,
+                "avg_price": 24017.867256637168,
+                "total_cost": 13570095.0,
+                "current_price": 27265.0,
+                "current_value": 15404725.0,
+                "unrealized_gain_loss": 1834630.0,
+                "unrealized_gain_loss_rate": 13.519654799763744
+              },
+              {
+                "account": "유신 키움 연금저축",
+                "security": "SOL 미국S&P500",
+                "shares": 473.0,
+                "avg_price": 15152.040169133192,
+                "total_cost": 7166915.0,
+                "current_price": 19900.0,
+                "current_value": 9412700.0,
+                "unrealized_gain_loss": 2245785.0,
+                "unrealized_gain_loss_rate": 31.335449073973948
+              },
+              {
+                "account": "유신 키움 연금저축",
+                "security": "RISE 미국S&P500",
+                "shares": 210.0,
+                "avg_price": 20273.266666666666,
+                "total_cost": 4257386.0,
+                "current_price": 20775.0,
+                "current_value": 4362750.0,
+                "unrealized_gain_loss": 105364.0,
+                "unrealized_gain_loss_rate": 2.4748519396643855
+              },
+              {
+                "account": "유신 키움 연금저축",
+                "security": "ACE 미국S&P500",
+                "shares": 79.0,
+                "avg_price": 23455.25316455696,
+                "total_cost": 1852965.0,
+                "current_price": 24085.0,
+                "current_value": 1902715.0,
+                "unrealized_gain_loss": 49750.0,
+                "unrealized_gain_loss_rate": 2.6848861149562997
+              }
+            ]
+          }
+        ],
+        "종합매매": [
+          {
+            "account_name": "종합매매",
+            "full_account_name": "유신 키움 종합매매",
+            "owner": "유신",
+            "broker": "키움",
+            "balance": 0.0,
+            "stock_value": 9440000.0,
+            "total_balance": 9440000.0,
+            "total_investment": 5011932.773109243,
+            "total_gain_loss": 4428067.226890757,
+            "holdings": [
+              {
+                "account": "유신 키움 종합매매",
+                "security": "삼성전자",
+                "shares": 100.0,
+                "avg_price": 50119.32773109243,
+                "total_cost": 5011932.773109243,
+                "current_price": 94400.0,
+                "current_value": 9440000.0,
+                "unrealized_gain_loss": 4428067.226890757,
+                "unrealized_gain_loss_rate": 88.35049126454514
+              }
+            ]
+          }
+        ]
+      },
+      "혜란": {
+        "연금저축": [
+          {
+            "account_name": "연금저축",
+            "full_account_name": "혜란 키움 연금저축",
+            "owner": "혜란",
+            "broker": "키움",
+            "balance": 4332006.0,
+            "stock_value": 0,
+            "total_balance": 4332006.0,
+            "total_investment": 0,
+            "total_gain_loss": 0,
+            "holdings": []
+          }
+        ],
+        "종합매매": [
+          {
+            "account_name": "종합매매",
+            "full_account_name": "혜란 키움 종합매매",
+            "owner": "혜란",
+            "broker": "키움",
+            "balance": 0.0,
+            "stock_value": 2095395.0,
+            "total_balance": 2095395.0,
+            "total_investment": 1142049.0,
+            "total_gain_loss": 953346.0,
+            "holdings": [
+              {
+                "account": "혜란 키움 종합매매",
+                "security": "ACE 미국S&P500",
+                "shares": 87.0,
+                "avg_price": 13127.0,
+                "total_cost": 1142049.0,
+                "current_price": 24085.0,
+                "current_value": 2095395.0,
+                "unrealized_gain_loss": 953346.0,
+                "unrealized_gain_loss_rate": 83.47680353469947
+              }
+            ]
+          }
+        ]
+      }
+    }
+  },
+  "owner_summary": [
+    {
+      "owner": "혜란",
+      "accountTypes": [
+        {
+          "accountType": "연금저축",
+          "cash_balance": 4332006.0,
+          "stock_value": 0,
+          "total_balance": 4332006.0,
+          "total_investment": 0,
+          "total_gain_loss": 0,
+          "account_count": 1,
+          "return_rate": 0
+        },
+        {
+          "accountType": "종합매매",
+          "cash_balance": 0.0,
+          "stock_value": 2095395.0,
+          "total_balance": 2095395.0,
+          "total_investment": 1142049.0,
+          "total_gain_loss": 953346.0,
+          "account_count": 1,
+          "return_rate": 83.47680353469947
+        }
+      ],
+      "total": {
+        "cash_balance": 4332006.0,
+        "stock_value": 2095395.0,
+        "total_balance": 6427401.0,
+        "total_investment": 1142049.0,
+        "total_gain_loss": 953346.0
+      }
+    },
+    {
+      "owner": "유신",
+      "accountTypes": [
+        {
+          "accountType": "연금저축",
+          "cash_balance": 14763.0,
+          "stock_value": 31082890.0,
+          "total_balance": 31097653.0,
+          "total_investment": 26847361.0,
+          "total_gain_loss": 4235529.0,
+          "account_count": 1,
+          "return_rate": 15.776332727823789
+        },
+        {
+          "accountType": "종합매매",
+          "cash_balance": 0.0,
+          "stock_value": 9440000.0,
+          "total_balance": 9440000.0,
+          "total_investment": 5011932.773109243,
+          "total_gain_loss": 4428067.226890757,
+          "account_count": 1,
+          "return_rate": 88.35049126454514
+        }
+      ],
+      "total": {
+        "cash_balance": 14763.0,
+        "stock_value": 40522890.0,
+        "total_balance": 40537653.0,
+        "total_investment": 31859293.773109242,
+        "total_gain_loss": 8663596.226890758
+      }
+    },
+    {
+      "owner": "민호",
+      "accountTypes": [
+        {
+          "accountType": "연금저축",
+          "cash_balance": 77889.0,
+          "stock_value": 81523890.0,
+          "total_balance": 81601779.0,
+          "total_investment": 52180555.0,
+          "total_gain_loss": 29343335.0,
+          "account_count": 1,
+          "return_rate": 56.2342332311337
+        },
+        {
+          "accountType": "ISA",
+          "cash_balance": 29131.0,
+          "stock_value": 461350.0,
+          "total_balance": 490481.0,
+          "total_investment": 393070.0,
+          "total_gain_loss": 68280.0,
+          "account_count": 1,
+          "return_rate": 17.370951738876027
+        },
+        {
+          "accountType": "종합매매",
+          "cash_balance": 343318.0,
+          "stock_value": 25275980.0,
+          "total_balance": 25619298.0,
+          "total_investment": 21529657.0,
+          "total_gain_loss": 3746323.0,
+          "account_count": 4,
+          "return_rate": 17.40075561816893
+        },
+        {
+          "accountType": "종합매매 해외",
+          "cash_balance": 0.0,
+          "stock_value": 0,
+          "total_balance": 0.0,
+          "total_investment": 0,
+          "total_gain_loss": 0,
+          "account_count": 2,
+          "return_rate": 0
+        }
+      ],
+      "total": {
+        "cash_balance": 450338.0,
+        "stock_value": 107261220.0,
+        "total_balance": 107711558.0,
+        "total_investment": 74103282.0,
+        "total_gain_loss": 33157938.0
+      }
+    }
+  ]
+}
