@@ -175,7 +175,7 @@ class YearlyReturnsDetailResponse(BaseModel):
     total_interest: float
     total_returns: float
     by_security: Dict[str, Dict[str, float]]
-    by_owner_and_account: Dict[str, Dict[str, Dict[str, Dict[str, float]]]]
+    by_owner_and_account: Dict[str, Any]
 
 # Yahoo API 응답 모델
 class StockPriceResponse(BaseModel):

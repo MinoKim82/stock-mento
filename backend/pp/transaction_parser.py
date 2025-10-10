@@ -753,6 +753,34 @@ class TransactionParser:
                 sell_sum = account_df[account_df['Type'] == 'Sell']['Net Transaction Value'].sum()
                 interest_sum = account_df[account_df['Type'] == 'Interest']['Net Transaction Value'].sum()
                 
+                # 계좌별 종목 상세 정보
+                securities_detail = {}
+                
+                # 배당 종목별
+                account_dividend_df = account_df[account_df['Type'] == 'Dividend']
+                for security, group in account_dividend_df.groupby('Security'):
+                    sec_name = security if pd.notna(security) else '기타'
+                    if sec_name not in securities_detail:
+                        securities_detail[sec_name] = {
+                            'dividend': 0,
+                            'sell_profit': 0,
+                            'sell_shares': 0
+                        }
+                    securities_detail[sec_name]['dividend'] += group['Net Transaction Value'].sum()
+                
+                # 매도 종목별
+                account_sell_df = account_df[account_df['Type'] == 'Sell']
+                for security, group in account_sell_df.groupby('Security'):
+                    sec_name = security if pd.notna(security) else '기타'
+                    if sec_name not in securities_detail:
+                        securities_detail[sec_name] = {
+                            'dividend': 0,
+                            'sell_profit': 0,
+                            'sell_shares': 0
+                        }
+                    securities_detail[sec_name]['sell_profit'] += group['Net Transaction Value'].sum()
+                    securities_detail[sec_name]['sell_shares'] += group['Shares'].sum()
+                
                 if dividend_sum > 0 or sell_sum > 0 or interest_sum > 0:
                     by_owner_and_account[owner][account_type][account_name] = {
                         'dividend': dividend_sum if pd.notna(dividend_sum) else 0,
@@ -760,7 +788,8 @@ class TransactionParser:
                         'interest': interest_sum if pd.notna(interest_sum) else 0,
                         'total': (dividend_sum if pd.notna(dividend_sum) else 0) + 
                                 (sell_sum if pd.notna(sell_sum) else 0) + 
-                                (interest_sum if pd.notna(interest_sum) else 0)
+                                (interest_sum if pd.notna(interest_sum) else 0),
+                        'securities': securities_detail
                     }
             
             yearly_results.append(YearlyReturnsDetail(

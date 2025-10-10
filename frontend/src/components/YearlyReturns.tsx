@@ -207,9 +207,10 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
                             
                             {/* 계좌 타입별 */}
                             <div className="p-3 space-y-3">
-                              {Object.entries(accountTypes).map(([accountType, securities]) => {
-                                const accountTotal = Object.values(securities).reduce(
-                                  (sum, data) => sum + data.dividend + data.sell_profit,
+                              {Object.entries(accountTypes).map(([accountType, accounts]) => {
+                                // 계좌 타입 총합 계산
+                                const accountTypeTotal = Object.values(accounts).reduce(
+                                  (sum: number, acc: any) => sum + (acc.total || 0),
                                   0
                                 );
                                 
@@ -219,38 +220,80 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
                                     <div className="bg-gray-50 px-3 py-2 border-b border-gray-100 flex items-center justify-between">
                                       <span className="text-sm font-medium text-gray-700">📁 {accountType}</span>
                                       <span className="text-sm font-semibold text-indigo-600">
-                                        {formatCurrency(accountTotal)}
+                                        {formatCurrency(accountTypeTotal)}
                                       </span>
                                     </div>
                                     
-                                    {/* 종목별 수익 */}
-                                    <div className="p-2 space-y-2">
-                                      {Object.entries(securities)
-                                        .sort(([, a], [, b]) => (b.dividend + b.sell_profit) - (a.dividend + a.sell_profit))
-                                        .map(([security, data]) => (
-                                          <div key={security} className="bg-gray-50 rounded p-2">
-                                            <div className="flex items-center justify-between mb-1">
-                                              <span className="text-sm font-medium text-gray-900">{security}</span>
-                                              <span className="text-sm font-semibold text-indigo-600">
-                                                {formatCurrency(data.dividend + data.sell_profit)}
+                                    {/* 계좌별 수익 */}
+                                    <div className="p-2 space-y-3">
+                                      {Object.entries(accounts)
+                                        .sort(([, a]: [string, any], [, b]: [string, any]) => (b.total || 0) - (a.total || 0))
+                                        .map(([accountName, accountData]: [string, any]) => (
+                                          <div key={accountName} className="bg-gray-50 rounded-lg p-3 border border-gray-200">
+                                            {/* 계좌 헤더 */}
+                                            <div className="flex items-center justify-between mb-2">
+                                              <span className="text-sm font-semibold text-gray-900">{accountName}</span>
+                                              <span className="text-sm font-bold text-indigo-600">
+                                                {formatCurrency(accountData.total)}
                                               </span>
                                             </div>
-                                            <div className="flex items-center space-x-3 text-xs text-gray-600">
-                                              {data.dividend > 0 && (
+                                            
+                                            {/* 배당/매도/이자 요약 */}
+                                            <div className="flex items-center space-x-3 text-xs text-gray-600 mb-2">
+                                              {accountData.dividend > 0 && (
                                                 <div className="flex items-center space-x-1">
-                                                  <PiggyBank className="w-3 h-3" />
-                                                  <span>배당: {formatCurrency(data.dividend)}</span>
+                                                  <PiggyBank className="w-3 h-3 text-green-600" />
+                                                  <span>배당: {formatCurrency(accountData.dividend)}</span>
                                                 </div>
                                               )}
-                                              {data.sell_profit !== 0 && (
+                                              {accountData.sell_profit !== 0 && (
                                                 <div className="flex items-center space-x-1">
-                                                  <TrendingUp className="w-3 h-3" />
-                                                  <span className={data.sell_profit >= 0 ? 'text-blue-600' : 'text-red-600'}>
-                                                    매도: {formatCurrency(data.sell_profit)}
+                                                  <TrendingUp className="w-3 h-3 text-blue-600" />
+                                                  <span className={accountData.sell_profit >= 0 ? 'text-blue-600' : 'text-red-600'}>
+                                                    매도: {formatCurrency(accountData.sell_profit)}
                                                   </span>
                                                 </div>
                                               )}
+                                              {accountData.interest > 0 && (
+                                                <div className="flex items-center space-x-1">
+                                                  <Coins className="w-3 h-3 text-purple-600" />
+                                                  <span>이자: {formatCurrency(accountData.interest)}</span>
+                                                </div>
+                                              )}
                                             </div>
+                                            
+                                            {/* 종목별 상세 */}
+                                            {accountData.securities && Object.keys(accountData.securities).length > 0 && (
+                                              <div className="mt-2 pt-2 border-t border-gray-200 space-y-1">
+                                                {Object.entries(accountData.securities)
+                                                  .sort(([, a]: [string, any], [, b]: [string, any]) => 
+                                                    (b.dividend + b.sell_profit) - (a.dividend + a.sell_profit)
+                                                  )
+                                                  .map(([security, secData]: [string, any]) => (
+                                                    <div key={security} className="text-xs bg-white rounded p-2">
+                                                      <div className="flex items-center justify-between mb-1">
+                                                        <span className="font-medium text-gray-800">{security}</span>
+                                                        <span className="font-semibold text-gray-900">
+                                                          {formatCurrency(secData.dividend + secData.sell_profit)}
+                                                        </span>
+                                                      </div>
+                                                      <div className="flex items-center space-x-2 text-xs text-gray-600">
+                                                        {secData.dividend > 0 && (
+                                                          <span className="text-green-600">
+                                                            배당 {formatCurrency(secData.dividend)}
+                                                          </span>
+                                                        )}
+                                                        {secData.sell_profit !== 0 && (
+                                                          <span className={secData.sell_profit >= 0 ? 'text-blue-600' : 'text-red-600'}>
+                                                            매도 {formatCurrency(secData.sell_profit)}
+                                                            {secData.sell_shares > 0 && ` (${secData.sell_shares}주)`}
+                                                          </span>
+                                                        )}
+                                                      </div>
+                                                    </div>
+                                                  ))}
+                                              </div>
+                                            )}
                                           </div>
                                         ))}
                                     </div>
