@@ -1,36 +1,23 @@
 import { useState, useEffect } from 'react';
 import { Calendar, TrendingUp, DollarSign, Coins, PiggyBank, ChevronDown, ChevronUp } from 'lucide-react';
-import { api } from '../api/client';
 import type { YearlyReturnsDetail, PortfolioSummary, PortfolioPerformance } from '../types';
 
 interface YearlyReturnsProps {
   sessionId: string;
   portfolioSummary?: PortfolioSummary;
   portfolioPerformance?: PortfolioPerformance;
+  yearlyReturnsData?: YearlyReturnsDetail[];
 }
 
-const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
+const YearlyReturns: React.FC<YearlyReturnsProps> = ({ yearlyReturnsData }) => {
   const [yearlyData, setYearlyData] = useState<YearlyReturnsDetail[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
   const [expandedYears, setExpandedYears] = useState<Set<number>>(new Set());
 
   useEffect(() => {
-    loadYearlyReturns();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [sessionId]);
-
-  const loadYearlyReturns = async () => {
-    try {
-      setLoading(true);
-      const data = await api.getYearlyReturns(sessionId);
-      setYearlyData(data.sort((a: YearlyReturnsDetail, b: YearlyReturnsDetail) => b.year - a.year)); // 최신 연도 먼저
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '수익 내역을 불러오는데 실패했습니다');
-    } finally {
-      setLoading(false);
+    if (yearlyReturnsData) {
+      setYearlyData(yearlyReturnsData.sort((a: YearlyReturnsDetail, b: YearlyReturnsDetail) => b.year - a.year));
     }
-  };
+  }, [yearlyReturnsData]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
@@ -49,18 +36,10 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
     setExpandedYears(newExpanded);
   };
 
-  if (loading) {
+  if (!yearlyData || yearlyData.length === 0) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-        <p className="text-red-700">{error}</p>
+        <p className="text-gray-500">수익 데이터를 불러오는 중...</p>
       </div>
     );
   }
@@ -69,9 +48,11 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
   const totalReturns = yearlyData.reduce((sum, year) => ({
     dividend: sum.dividend + year.total_dividend,
     sell_profit: sum.sell_profit + year.total_sell_profit,
+    sell_revenue: sum.sell_revenue + year.total_sell_revenue,
+    sell_cost: sum.sell_cost + year.total_sell_cost,
     interest: sum.interest + year.total_interest,
     total: sum.total + year.total_returns,
-  }), { dividend: 0, sell_profit: 0, interest: 0, total: 0 });
+  }), { dividend: 0, sell_profit: 0, sell_revenue: 0, sell_cost: 0, interest: 0, total: 0 });
 
   return (
     <div className="p-6 space-y-6 overflow-auto h-full">
@@ -110,6 +91,9 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
             </div>
             <div className={`text-xl font-bold ${totalReturns.sell_profit >= 0 ? 'text-blue-600' : 'text-red-600'}`}>
               {formatCurrency(totalReturns.sell_profit)}
+            </div>
+            <div className="text-xs text-gray-500 mt-1">
+              매도액 {formatCurrency(totalReturns.sell_revenue)} - 원가 {formatCurrency(totalReturns.sell_cost)}
             </div>
           </div>
 
@@ -239,7 +223,7 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
                                             </div>
                                             
                                             {/* 배당/매도/이자 요약 */}
-                                            <div className="flex items-center space-x-3 text-xs text-gray-600 mb-2">
+                                            <div className="space-y-1 text-xs text-gray-600 mb-2">
                                               {accountData.dividend > 0 && (
                                                 <div className="flex items-center space-x-1">
                                                   <PiggyBank className="w-3 h-3 text-green-600" />
@@ -247,11 +231,16 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
                                                 </div>
                                               )}
                                               {accountData.sell_profit !== 0 && (
-                                                <div className="flex items-center space-x-1">
-                                                  <TrendingUp className="w-3 h-3 text-blue-600" />
-                                                  <span className={accountData.sell_profit >= 0 ? 'text-blue-600' : 'text-red-600'}>
-                                                    매도: {formatCurrency(accountData.sell_profit)}
-                                                  </span>
+                                                <div>
+                                                  <div className="flex items-center space-x-1">
+                                                    <TrendingUp className="w-3 h-3 text-blue-600" />
+                                                    <span className={accountData.sell_profit >= 0 ? 'text-blue-600 font-semibold' : 'text-red-600 font-semibold'}>
+                                                      매도 차익: {formatCurrency(accountData.sell_profit)}
+                                                    </span>
+                                                  </div>
+                                                  <div className="ml-4 text-gray-500">
+                                                    매도액 {formatCurrency(accountData.sell_revenue)} - 원가 {formatCurrency(accountData.sell_cost)}
+                                                  </div>
                                                 </div>
                                               )}
                                               {accountData.interest > 0 && (
@@ -277,17 +266,22 @@ const YearlyReturns: React.FC<YearlyReturnsProps> = ({ sessionId }) => {
                                                           {formatCurrency(secData.dividend + secData.sell_profit)}
                                                         </span>
                                                       </div>
-                                                      <div className="flex items-center space-x-2 text-xs text-gray-600">
+                                                      <div className="space-y-0.5 text-xs text-gray-600">
                                                         {secData.dividend > 0 && (
-                                                          <span className="text-green-600">
+                                                          <div className="text-green-600">
                                                             배당 {formatCurrency(secData.dividend)}
-                                                          </span>
+                                                          </div>
                                                         )}
                                                         {secData.sell_profit !== 0 && (
-                                                          <span className={secData.sell_profit >= 0 ? 'text-blue-600' : 'text-red-600'}>
-                                                            매도 {formatCurrency(secData.sell_profit)}
-                                                            {secData.sell_shares > 0 && ` (${secData.sell_shares}주)`}
-                                                          </span>
+                                                          <div>
+                                                            <div className={secData.sell_profit >= 0 ? 'text-blue-600 font-medium' : 'text-red-600 font-medium'}>
+                                                              매도 차익 {formatCurrency(secData.sell_profit)}
+                                                              {secData.sell_shares > 0 && ` (${secData.sell_shares}주)`}
+                                                            </div>
+                                                            <div className="text-gray-400 text-[10px] ml-1">
+                                                              {formatCurrency(secData.sell_revenue)} - {formatCurrency(secData.sell_cost)}
+                                                            </div>
+                                                          </div>
                                                         )}
                                                       </div>
                                                     </div>

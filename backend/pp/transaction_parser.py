@@ -96,7 +96,9 @@ class YearlyReturnsDetail:
     """연도별 수익 내역"""
     year: int
     total_dividend: float
-    total_sell_profit: float
+    total_sell_profit: float  # 매도 차익 (매도금액 - 매수원가)
+    total_sell_revenue: float  # 전체 매도 금액
+    total_sell_cost: float  # 전체 매도 원가
     total_interest: float
     total_returns: float
     by_security: dict  # Dict[str, Dict[str, float]]
@@ -691,6 +693,9 @@ class TransactionParser:
         
         yearly_results = []
         
+        # 각 계좌별, 종목별 매수 원가 추적
+        account_holdings_cost = {}  # {account: {security: {total_shares: float, total_cost: float}}}
+        
         for year in sorted(df['Year'].unique()):
             year_df = df[df['Year'] == year]
             
@@ -702,13 +707,87 @@ class TransactionParser:
             interest_df = year_df[year_df['Type'] == 'Interest']
             total_interest = interest_df['Net Transaction Value'].sum() if len(interest_df) > 0 else 0
             
-            # 매도 차익 (매도 금액 - 매도한 주식의 원가)
-            sell_df = year_df[year_df['Type'] == 'Sell']
-            total_sell_revenue = sell_df['Net Transaction Value'].sum() if len(sell_df) > 0 else 0
-            # 간단하게 매도 금액만 계산 (실제 차익은 별도 계산 필요)
-            total_sell_profit = total_sell_revenue
+            # 이번 연도의 모든 거래를 처리하여 원가 추적 및 매도 차익 계산
+            year_sell_profit = 0.0
+            year_sell_revenue = 0.0
+            year_sell_cost = 0.0
             
-            # 총 수익
+            # 계좌별 매도 정보 저장
+            account_sell_info = {}  # {account: {security: {profit, revenue, cost, shares}}}
+            
+            # 해당 연도까지의 모든 거래를 시간순으로 처리
+            all_df_until_year = df[df['Year'] <= year].sort_values('Date')
+            
+            for _, row in all_df_until_year.iterrows():
+                if row['Type'] not in ['Buy', 'Sell'] or pd.isna(row['Security']):
+                    continue
+                
+                account = row['Cash Account']
+                security = row['Security']
+                shares = row['Shares'] if pd.notna(row['Shares']) else 0
+                
+                if account not in account_holdings_cost:
+                    account_holdings_cost[account] = {}
+                if security not in account_holdings_cost[account]:
+                    account_holdings_cost[account][security] = {'total_shares': 0, 'total_cost': 0.0}
+                
+                if row['Type'] == 'Buy':
+                    # 매수: 원가 추가
+                    cost = shares * row['Quote'] if pd.notna(row['Quote']) else 0
+                    account_holdings_cost[account][security]['total_shares'] += shares
+                    account_holdings_cost[account][security]['total_cost'] += cost
+                    
+                elif row['Type'] == 'Sell' and row['Year'] == year:
+                    # 이번 연도 매도: 차익 계산
+                    sell_revenue = row['Net Transaction Value'] if pd.notna(row['Net Transaction Value']) else 0
+                    
+                    # 평균 원가 계산
+                    if account_holdings_cost[account][security]['total_shares'] > 0:
+                        avg_cost = account_holdings_cost[account][security]['total_cost'] / account_holdings_cost[account][security]['total_shares']
+                        sell_cost = shares * avg_cost
+                        sell_profit = sell_revenue - sell_cost
+                        
+                        # 원가에서 차감
+                        account_holdings_cost[account][security]['total_shares'] -= shares
+                        account_holdings_cost[account][security]['total_cost'] -= sell_cost
+                    else:
+                        # 원가 정보가 없는 경우 (데이터 시작 전 매수)
+                        sell_cost = 0
+                        sell_profit = sell_revenue
+                    
+                    # 계좌별 매도 정보 저장
+                    if account not in account_sell_info:
+                        account_sell_info[account] = {}
+                    if security not in account_sell_info[account]:
+                        account_sell_info[account][security] = {
+                            'profit': 0, 
+                            'revenue': 0, 
+                            'cost': 0, 
+                            'shares': 0
+                        }
+                    
+                    account_sell_info[account][security]['profit'] += sell_profit
+                    account_sell_info[account][security]['revenue'] += sell_revenue
+                    account_sell_info[account][security]['cost'] += sell_cost
+                    account_sell_info[account][security]['shares'] += shares
+                    
+                    year_sell_profit += sell_profit
+                    year_sell_revenue += sell_revenue
+                    year_sell_cost += sell_cost
+                    
+                elif row['Type'] == 'Sell' and row['Year'] < year:
+                    # 과거 연도 매도: 원가만 차감
+                    if account_holdings_cost[account][security]['total_shares'] > 0:
+                        avg_cost = account_holdings_cost[account][security]['total_cost'] / account_holdings_cost[account][security]['total_shares']
+                        sell_cost = shares * avg_cost
+                        account_holdings_cost[account][security]['total_shares'] -= shares
+                        account_holdings_cost[account][security]['total_cost'] -= sell_cost
+            
+            total_sell_profit = year_sell_profit
+            total_sell_revenue = year_sell_revenue
+            total_sell_cost = year_sell_cost
+            
+            # 총 수익 (배당 + 이자 + 매도 차익)
             total_returns = total_dividend + total_interest + total_sell_profit
             
             # 종목별 수익
@@ -719,19 +798,27 @@ class TransactionParser:
                     by_security[sec_name] = {
                         'dividend': 0,
                         'sell_profit': 0,
+                        'sell_revenue': 0,
+                        'sell_cost': 0,
                         'interest': 0
                     }
                 by_security[sec_name]['dividend'] += group['Net Transaction Value'].sum()
             
-            for security, group in sell_df.groupby('Security'):
-                sec_name = security if pd.notna(security) else '기타'
-                if sec_name not in by_security:
-                    by_security[sec_name] = {
-                        'dividend': 0,
-                        'sell_profit': 0,
-                        'interest': 0
-                    }
-                by_security[sec_name]['sell_profit'] += group['Net Transaction Value'].sum()
+            # 종목별 매도 정보
+            for account, securities in account_sell_info.items():
+                for security, info in securities.items():
+                    sec_name = security if pd.notna(security) else '기타'
+                    if sec_name not in by_security:
+                        by_security[sec_name] = {
+                            'dividend': 0,
+                            'sell_profit': 0,
+                            'sell_revenue': 0,
+                            'sell_cost': 0,
+                            'interest': 0
+                        }
+                    by_security[sec_name]['sell_profit'] += info['profit']
+                    by_security[sec_name]['sell_revenue'] += info['revenue']
+                    by_security[sec_name]['sell_cost'] += info['cost']
             
             # 소유자 및 계좌 타입별 수익
             by_owner_and_account = {}
@@ -750,8 +837,18 @@ class TransactionParser:
                 account_df = year_df[year_df['Cash Account'] == account_name]
                 
                 dividend_sum = account_df[account_df['Type'] == 'Dividend']['Net Transaction Value'].sum()
-                sell_sum = account_df[account_df['Type'] == 'Sell']['Net Transaction Value'].sum()
                 interest_sum = account_df[account_df['Type'] == 'Interest']['Net Transaction Value'].sum()
+                
+                # 계좌별 매도 정보
+                account_sell_profit = 0.0
+                account_sell_revenue = 0.0
+                account_sell_cost = 0.0
+                
+                if account_name in account_sell_info:
+                    for security, info in account_sell_info[account_name].items():
+                        account_sell_profit += info['profit']
+                        account_sell_revenue += info['revenue']
+                        account_sell_cost += info['cost']
                 
                 # 계좌별 종목 상세 정보
                 securities_detail = {}
@@ -764,30 +861,38 @@ class TransactionParser:
                         securities_detail[sec_name] = {
                             'dividend': 0,
                             'sell_profit': 0,
+                            'sell_revenue': 0,
+                            'sell_cost': 0,
                             'sell_shares': 0
                         }
                     securities_detail[sec_name]['dividend'] += group['Net Transaction Value'].sum()
                 
                 # 매도 종목별
-                account_sell_df = account_df[account_df['Type'] == 'Sell']
-                for security, group in account_sell_df.groupby('Security'):
-                    sec_name = security if pd.notna(security) else '기타'
-                    if sec_name not in securities_detail:
-                        securities_detail[sec_name] = {
-                            'dividend': 0,
-                            'sell_profit': 0,
-                            'sell_shares': 0
-                        }
-                    securities_detail[sec_name]['sell_profit'] += group['Net Transaction Value'].sum()
-                    securities_detail[sec_name]['sell_shares'] += group['Shares'].sum()
+                if account_name in account_sell_info:
+                    for security, info in account_sell_info[account_name].items():
+                        sec_name = security if pd.notna(security) else '기타'
+                        if sec_name not in securities_detail:
+                            securities_detail[sec_name] = {
+                                'dividend': 0,
+                                'sell_profit': 0,
+                                'sell_revenue': 0,
+                                'sell_cost': 0,
+                                'sell_shares': 0
+                            }
+                        securities_detail[sec_name]['sell_profit'] += info['profit']
+                        securities_detail[sec_name]['sell_revenue'] += info['revenue']
+                        securities_detail[sec_name]['sell_cost'] += info['cost']
+                        securities_detail[sec_name]['sell_shares'] += info['shares']
                 
-                if dividend_sum > 0 or sell_sum > 0 or interest_sum > 0:
+                if dividend_sum > 0 or account_sell_profit != 0 or interest_sum > 0:
                     by_owner_and_account[owner][account_type][account_name] = {
                         'dividend': dividend_sum if pd.notna(dividend_sum) else 0,
-                        'sell_profit': sell_sum if pd.notna(sell_sum) else 0,
+                        'sell_profit': account_sell_profit,
+                        'sell_revenue': account_sell_revenue,
+                        'sell_cost': account_sell_cost,
                         'interest': interest_sum if pd.notna(interest_sum) else 0,
                         'total': (dividend_sum if pd.notna(dividend_sum) else 0) + 
-                                (sell_sum if pd.notna(sell_sum) else 0) + 
+                                account_sell_profit + 
                                 (interest_sum if pd.notna(interest_sum) else 0),
                         'securities': securities_detail
                     }
@@ -796,6 +901,8 @@ class TransactionParser:
                 year=int(year),
                 total_dividend=total_dividend,
                 total_sell_profit=total_sell_profit,
+                total_sell_revenue=total_sell_revenue,
+                total_sell_cost=total_sell_cost,
                 total_interest=total_interest,
                 total_returns=total_returns,
                 by_security=by_security,

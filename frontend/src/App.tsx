@@ -15,6 +15,7 @@ function App() {
     portfolioSummary,
     portfolioPerformance,
     accountsDetailed,
+    yearlyReturns,
     isLoading,
     error,
     uploadCsv,
@@ -23,6 +24,7 @@ function App() {
     clearError,
     loadTransactionList,
     loadAccountsDetailed,
+    loadYearlyReturns,
   } = usePortfolio();
 
 
@@ -42,13 +44,14 @@ function App() {
     }
   };
 
-  // 세션 변경 시 거래 내역과 계좌 상세 정보 로드
+  // 세션 변경 시 거래 내역과 계좌 상세 정보, 연도별 수익 로드
   useEffect(() => {
     if (sessionId) {
       loadTransactionList(sessionId);
       loadAccountsDetailed(sessionId);
+      loadYearlyReturns(sessionId);
     }
-  }, [sessionId, loadTransactionList, loadAccountsDetailed]);
+  }, [sessionId, loadTransactionList, loadAccountsDetailed, loadYearlyReturns]);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -124,8 +127,14 @@ function App() {
                   label="포트폴리오 요약" 
                   icon={<PieChart className="w-4 h-4" />}
                 >
-                  {portfolioSummary && (
+                  {portfolioSummary ? (
                     <CompactPortfolioSummary data={portfolioSummary} />
+                  ) : (
+                    <div className="p-6 space-y-4 animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                      <div className="h-32 bg-gray-200 rounded"></div>
+                      <div className="h-32 bg-gray-200 rounded"></div>
+                    </div>
                   )}
                 </Tab>
                 
@@ -133,8 +142,14 @@ function App() {
                   label="계좌별 포트폴리오" 
                   icon={<BarChart3 className="w-4 h-4" />}
                 >
-                  {accountsDetailed && (
+                  {accountsDetailed ? (
                     <AccountPortfolio data={accountsDetailed} />
+                  ) : (
+                    <div className="p-6 space-y-4 animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+                      <div className="h-48 bg-gray-200 rounded"></div>
+                      <div className="h-48 bg-gray-200 rounded"></div>
+                    </div>
                   )}
                 </Tab>
                 
@@ -142,12 +157,19 @@ function App() {
                   label="수익" 
                   icon={<TrendingUp className="w-4 h-4" />}
                 >
-                  {portfolioSummary && portfolioPerformance && (
+                  {portfolioSummary && portfolioPerformance && yearlyReturns ? (
                     <YearlyReturns 
                       portfolioSummary={portfolioSummary}
                       portfolioPerformance={portfolioPerformance}
                       sessionId={sessionId}
+                      yearlyReturnsData={yearlyReturns}
                     />
+                  ) : (
+                    <div className="p-6 space-y-4 animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+                      <div className="h-40 bg-gray-200 rounded"></div>
+                      <div className="h-40 bg-gray-200 rounded"></div>
+                    </div>
                   )}
                 </Tab>
                 

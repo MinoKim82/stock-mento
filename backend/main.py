@@ -171,7 +171,9 @@ class TotalBalanceResponse(BaseModel):
 class YearlyReturnsDetailResponse(BaseModel):
     year: int
     total_dividend: float
-    total_sell_profit: float
+    total_sell_profit: float  # 매도 차익
+    total_sell_revenue: float  # 전체 매도 금액
+    total_sell_cost: float  # 전체 매도 원가
     total_interest: float
     total_returns: float
     by_security: Dict[str, Dict[str, float]]
@@ -241,12 +243,13 @@ async def upload_csv(file: UploadFile = File(...)):
 @app.get("/cache/info")
 async def get_cache_info():
     """현재 CSV 파일 정보 조회"""
-    if os.path.exists(CURRENT_CSV_FILE):
+    if os.path.exists(CURRENT_CSV_FILE) and current_parser is not None:
         file_size = os.path.getsize(CURRENT_CSV_FILE)
         return {
             "total_sessions": 1,
             "total_cache_size": file_size,
             "total_cache_size_mb": round(file_size / 1024 / 1024, 2),
+            "has_data": True,
             "sessions": ["current"],
             "csv_file": CURRENT_CSV_FILE
         }
@@ -255,6 +258,7 @@ async def get_cache_info():
             "total_sessions": 0,
             "total_cache_size": 0,
             "total_cache_size_mb": 0.0,
+            "has_data": False,
             "sessions": [],
             "csv_file": None
         }
@@ -1030,6 +1034,8 @@ async def get_yearly_returns(session_id: str):
             year=yr.year,
             total_dividend=yr.total_dividend,
             total_sell_profit=yr.total_sell_profit,
+            total_sell_revenue=yr.total_sell_revenue,
+            total_sell_cost=yr.total_sell_cost,
             total_interest=yr.total_interest,
             total_returns=yr.total_returns,
             by_security=yr.by_security,

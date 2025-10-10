@@ -104,6 +104,7 @@ export interface CacheInfo {
   total_sessions: number;
   total_cache_size: number;
   total_cache_size_mb: number;
+  has_data: boolean;
   sessions: string[];
 }
 
@@ -164,13 +165,17 @@ export interface AccountsDetailed {
 export interface YearlyReturnsDetail {
   year: number;
   total_dividend: number;
-  total_sell_profit: number;
+  total_sell_profit: number;  // 매도 차익
+  total_sell_revenue: number;  // 전체 매도 금액
+  total_sell_cost: number;  // 전체 매도 원가
   total_interest: number;
   total_returns: number;
   by_security: {
     [security: string]: {
       dividend: number;
       sell_profit: number;
+      sell_revenue: number;
+      sell_cost: number;
     };
   };
   by_owner_and_account: {
@@ -179,6 +184,8 @@ export interface YearlyReturnsDetail {
         [security: string]: {
           dividend: number;
           sell_profit: number;
+          sell_revenue: number;
+          sell_cost: number;
         };
       };
     };

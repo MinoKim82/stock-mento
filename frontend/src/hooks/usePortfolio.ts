@@ -7,7 +7,8 @@ import type {
   PortfolioRisk, 
   CacheInfo,
   TransactionList,
-  AccountsDetailed 
+  AccountsDetailed,
+  YearlyReturnsDetail
 } from '../types';
 
 export const usePortfolio = () => {
@@ -19,6 +20,7 @@ export const usePortfolio = () => {
   const [cacheInfo, setCacheInfo] = useState<CacheInfo | null>(null);
   const [transactionList, setTransactionList] = useState<TransactionList | null>(null);
   const [accountsDetailed, setAccountsDetailed] = useState<AccountsDetailed | null>(null);
+  const [yearlyReturns, setYearlyReturns] = useState<YearlyReturnsDetail[] | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [initialCheckDone, setInitialCheckDone] = useState(false);
@@ -80,33 +82,66 @@ export const usePortfolio = () => {
     if (!initialCheckDone) {
       const checkExistingData = async () => {
         try {
-          const dummySessionId = 'current';
-          const summary = await api.getPortfolioSummary(dummySessionId);
+          // 먼저 캐시 정보를 확인하여 데이터가 있는지 체크
+          const cacheInfo = await api.getCacheInfo();
           
-          if (summary) {
-            // 기존 데이터가 있으면 자동으로 세션 설정
+          if (cacheInfo.has_data) {
+            const dummySessionId = 'current';
+            
+            // 즉시 세션 설정 (화면 전환)
             setSessionId(dummySessionId);
             setSessionInfo({
               session_id: dummySessionId,
               message: '기존 CSV 파일이 로드되었습니다.',
-              cache_size: 0,
+              cache_size: cacheInfo.total_cache_size,
               total_sessions: 1
             });
             
-            // 모든 데이터 로드
-            await loadPortfolioData(dummySessionId);
+            // 초기 체크 완료 표시 (화면 전환 트리거)
+            setInitialCheckDone(true);
+            
+            // 1단계: 필수 데이터만 먼저 로드 (포트폴리오 요약만)
+            const summary = await api.getPortfolioSummary(dummySessionId);
+            setPortfolioSummary(summary);
+            
+            // 2단계: 나머지 데이터는 백그라운드에서 비동기 로드
+            Promise.all([
+              api.getPortfolioPerformance(dummySessionId),
+              api.getPortfolioRisk(dummySessionId),
+              api.getAccountsDetailed(dummySessionId),
+            ]).then(([performance, risk, accounts]) => {
+              setPortfolioPerformance(performance);
+              setPortfolioRisk(risk);
+              setAccountsDetailed(accounts);
+            }).catch(err => {
+              console.error('백그라운드 데이터 로드 실패:', err);
+            });
+            
+            // 3단계: 덜 중요한 데이터는 더 나중에 로드
+            setTimeout(() => {
+              Promise.all([
+                api.getAllTransactions(dummySessionId),
+                api.getYearlyReturns(dummySessionId)
+              ]).then(([transactions, returns]) => {
+                setTransactionList(transactions);
+                setYearlyReturns(returns);
+              }).catch(err => {
+                console.error('추가 데이터 로드 실패:', err);
+              });
+            }, 500);
+          } else {
+            setInitialCheckDone(true);
           }
         } catch (err) {
           // 기존 데이터 없음 - 사용자에게 업로드 대기
           console.log('No existing CSV file found. Please upload a CSV file.');
-        } finally {
           setInitialCheckDone(true);
         }
       };
       
       checkExistingData();
     }
-  }, [initialCheckDone, loadPortfolioData]);
+  }, [initialCheckDone]);
 
   const loadFilteredPortfolioData = useCallback(async (
     sessionId: string, 
@@ -169,6 +204,21 @@ export const usePortfolio = () => {
     }
   }, []);
 
+  const loadYearlyReturns = useCallback(async (sessionId: string) => {
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const returns = await api.getYearlyReturns(sessionId);
+      setYearlyReturns(returns);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : '연도별 수익 내역 로드 중 오류가 발생했습니다.');
+      throw err;
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
   const loadCacheInfo = useCallback(async () => {
     try {
       const info = await api.getCacheInfo();
@@ -219,6 +269,7 @@ export const usePortfolio = () => {
     cacheInfo,
     transactionList,
     accountsDetailed,
+    yearlyReturns,
     isLoading,
     error,
     
@@ -228,6 +279,7 @@ export const usePortfolio = () => {
     loadFilteredPortfolioData,
     loadTransactionList,
     loadAccountsDetailed,
+    loadYearlyReturns,
     loadCacheInfo,
     clearCache,
     refreshData,

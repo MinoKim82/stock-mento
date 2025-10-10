@@ -1,5 +1,5 @@
-import React, { useState } from 'react';
-import { TrendingUp, TrendingDown, DollarSign, BarChart3, ChevronDown, ChevronRight, Building2, User } from 'lucide-react';
+import React from 'react';
+import { TrendingUp, TrendingDown, DollarSign, BarChart3, Building2, User } from 'lucide-react';
 import type { AccountsDetailed } from '../types';
 
 interface AccountPortfolioProps {
@@ -7,9 +7,6 @@ interface AccountPortfolioProps {
 }
 
 const AccountPortfolio: React.FC<AccountPortfolioProps> = ({ data }) => {
-  const [expandedOwners, setExpandedOwners] = useState<Set<string>>(new Set(['혜란', '유신', '민호']));
-  const [expandedTypes, setExpandedTypes] = useState<Set<string>>(new Set());
-  const [expandedAccounts, setExpandedAccounts] = useState<Set<string>>(new Set());
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('ko-KR', {
@@ -55,36 +52,6 @@ const AccountPortfolio: React.FC<AccountPortfolioProps> = ({ data }) => {
     return order[type as keyof typeof order] || 999;
   };
 
-  const toggleOwner = (owner: string) => {
-    const newExpanded = new Set(expandedOwners);
-    if (newExpanded.has(owner)) {
-      newExpanded.delete(owner);
-    } else {
-      newExpanded.add(owner);
-    }
-    setExpandedOwners(newExpanded);
-  };
-
-  const toggleType = (ownerTypeKey: string) => {
-    const newExpanded = new Set(expandedTypes);
-    if (newExpanded.has(ownerTypeKey)) {
-      newExpanded.delete(ownerTypeKey);
-    } else {
-      newExpanded.add(ownerTypeKey);
-    }
-    setExpandedTypes(newExpanded);
-  };
-
-  const toggleAccount = (accountName: string) => {
-    const newExpanded = new Set(expandedAccounts);
-    if (newExpanded.has(accountName)) {
-      newExpanded.delete(accountName);
-    } else {
-      newExpanded.add(accountName);
-    }
-    setExpandedAccounts(newExpanded);
-  };
-
   // 소유자별로 정렬
   const sortedOwners = Object.entries(data.accounts_by_owner_and_type).sort(
     ([a], [b]) => getOwnerOrder(a) - getOwnerOrder(b)
@@ -101,29 +68,18 @@ const AccountPortfolio: React.FC<AccountPortfolioProps> = ({ data }) => {
         {sortedOwners.map(([owner, ownerAccounts]) => (
           <div key={owner} className="border border-gray-200 rounded-lg bg-white">
             {/* 소유자 헤더 */}
-            <div
-              className="p-3 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
-              onClick={() => toggleOwner(owner)}
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center space-x-2">
-                  <User className="w-4 h-4 text-blue-600" />
-                  <h4 className="font-semibold text-gray-900">{owner}</h4>
-                  <span className="text-sm text-gray-600">
-                    ({Object.values(ownerAccounts).flat().length}개 계좌)
-                  </span>
-                </div>
-                {expandedOwners.has(owner) ? (
-                  <ChevronDown className="w-4 h-4 text-gray-500" />
-                ) : (
-                  <ChevronRight className="w-4 h-4 text-gray-500" />
-                )}
+            <div className="p-3 bg-gray-50 border-b border-gray-200">
+              <div className="flex items-center space-x-2">
+                <User className="w-4 h-4 text-blue-600" />
+                <h4 className="font-semibold text-gray-900">{owner}</h4>
+                <span className="text-sm text-gray-600">
+                  ({Object.values(ownerAccounts).flat().length}개 계좌)
+                </span>
               </div>
             </div>
 
             {/* 계좌타입별 목록 */}
-            {expandedOwners.has(owner) && (
-              <div className="p-3 space-y-4">
+            <div className="p-3 space-y-4">
                 {Object.entries(ownerAccounts)
                   .sort(([a], [b]) => getAccountTypeOrder(a) - getAccountTypeOrder(b))
                   .map(([accountType, accounts]) => {
@@ -131,54 +87,30 @@ const AccountPortfolio: React.FC<AccountPortfolioProps> = ({ data }) => {
                     return (
                       <div key={ownerTypeKey} className="border border-gray-200 rounded-lg bg-gray-50">
                         {/* 계좌타입 헤더 */}
-                        <div
-                          className="p-3 bg-white border-b border-gray-200 cursor-pointer hover:bg-gray-50 transition-colors"
-                          onClick={() => toggleType(ownerTypeKey)}
-                        >
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center space-x-2">
-                              <Building2 className="w-4 h-4 text-green-600" />
-                              <h5 className="font-medium text-gray-900">{accountType}</h5>
-                              <span className="text-sm text-gray-600">({accounts.length}개 계좌)</span>
-                            </div>
-                            {expandedTypes.has(ownerTypeKey) ? (
-                              <ChevronDown className="w-4 h-4 text-gray-500" />
-                            ) : (
-                              <ChevronRight className="w-4 h-4 text-gray-500" />
-                            )}
+                        <div className="p-3 bg-white border-b border-gray-200">
+                          <div className="flex items-center space-x-2">
+                            <Building2 className="w-4 h-4 text-green-600" />
+                            <h5 className="font-medium text-gray-900">{accountType}</h5>
+                            <span className="text-sm text-gray-600">({accounts.length}개 계좌)</span>
                           </div>
                         </div>
 
                         {/* 계좌 목록 */}
-                        {expandedTypes.has(ownerTypeKey) && (
-                          <div className="p-3 space-y-3">
+                        <div className="p-3 space-y-3">
                             {accounts.map((account) => (
                               <div key={account.full_account_name} className="border border-gray-200 rounded-lg bg-white">
                                 {/* 계좌 헤더 */}
-                                <div
-                                  className="p-3 bg-gray-50 border-b border-gray-200 cursor-pointer hover:bg-gray-100 transition-colors"
-                                  onClick={() => toggleAccount(account.full_account_name)}
-                                >
+                                <div className="p-3 bg-gray-50 border-b border-gray-200">
                                   <div className="flex items-center justify-between">
-                                    <div className="flex items-center space-x-2">
-                                      <div className="font-medium text-gray-900">{account.account_name}</div>
-                                    </div>
-                                    <div className="flex items-center space-x-2">
-                                      <div className={`px-2 py-1 rounded-full text-xs font-medium ${getColorClass(account.total_gain_loss)}`}>
-                                        {formatCurrency(account.total_gain_loss)}
-                                      </div>
-                                      {expandedAccounts.has(account.full_account_name) ? (
-                                        <ChevronDown className="w-4 h-4 text-gray-500" />
-                                      ) : (
-                                        <ChevronRight className="w-4 h-4 text-gray-500" />
-                                      )}
+                                    <div className="font-medium text-gray-900">{account.account_name}</div>
+                                    <div className={`px-2 py-1 rounded-full text-xs font-medium ${getColorClass(account.total_gain_loss)}`}>
+                                      {formatCurrency(account.total_gain_loss)}
                                     </div>
                                   </div>
                                 </div>
 
                                 {/* 계좌 상세 정보 */}
-                                {expandedAccounts.has(account.full_account_name) && (
-                                  <div className="p-3 space-y-4">
+                                <div className="p-3 space-y-4">
                                     {/* 계좌 기본 정보 */}
                                     <div className="grid grid-cols-4 gap-3 text-sm">
                                       <div className="bg-blue-50 rounded-lg p-3">
@@ -281,17 +213,14 @@ const AccountPortfolio: React.FC<AccountPortfolioProps> = ({ data }) => {
                                         보유 종목이 없습니다.
                                       </div>
                                     )}
-                                  </div>
-                                )}
+                                </div>
                               </div>
                             ))}
-                          </div>
-                        )}
+                        </div>
                       </div>
                     );
                   })}
-              </div>
-            )}
+            </div>
           </div>
         ))}
       </div>
