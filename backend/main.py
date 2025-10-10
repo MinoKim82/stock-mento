@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import StreamingResponse
 import os
 import json
 from typing import List, Dict, Any, Optional
@@ -33,6 +34,15 @@ except ImportError:
     YAHOO_AVAILABLE = False
     yahoo_client = None
 
+# LangChain Service 임포트
+try:
+    from langchain_service import ChatService, PortfolioAnalysisChat
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_AVAILABLE = False
+    print("⚠️ LangChain 서비스를 사용하려면 다음 패키지를 설치하세요:")
+    print("pip install langchain langchain-openai langchain-google-genai python-dotenv")
+
 app = FastAPI(title="Stock Portfolio API", version="1.0.0")
 
 # CORS 설정
@@ -61,6 +71,9 @@ os.makedirs(PARSED_DATA_DIR, exist_ok=True)
 
 # TransactionParser 인스턴스 (단일 인스턴스로 변경)
 current_parser: Optional[TransactionParser] = None
+
+# ChatService 인스턴스 (전역)
+chat_service: Optional[PortfolioAnalysisChat] = None
 
 def parse_and_cache_data(parser: TransactionParser):
     """모든 데이터를 파싱하고 JSON으로 캐싱"""
@@ -1408,6 +1421,246 @@ async def get_yearly_returns(session_id: str):
 async def startup_event():
     """서버 시작 시 기존 CSV 파일 로드"""
     load_existing_csv()
+
+# ============================================
+# LangChain AI Chat API
+# ============================================
+
+class ChatRequest(BaseModel):
+    """채팅 요청 모델"""
+    message: str
+    provider: Optional[str] = None  # "openai" or "gemini"
+
+class ChatResponse(BaseModel):
+    """채팅 응답 모델"""
+    response: str
+    history: List[Dict[str, str]]
+
+@app.post("/chat", response_model=ChatResponse, tags=["AI Chat"])
+async def chat_endpoint(request: ChatRequest):
+    """
+    AI 챗봇과 대화
+    
+    Args:
+        request: 채팅 요청 (메시지, provider)
+        
+    Returns:
+        AI 응답 및 대화 히스토리
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다. 필요한 패키지를 설치해주세요."
+        )
+    
+    global chat_service
+    
+    try:
+        # ChatService 초기화 (처음 한 번만)
+        if chat_service is None:
+            # 파싱된 데이터 로드
+            portfolio_data = None
+            if os.path.exists(PARSED_DATA_FILE):
+                with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+                    portfolio_data = json.load(f)
+            
+            provider = request.provider or os.getenv("AI_PROVIDER", "gemini")
+            chat_service = PortfolioAnalysisChat(
+                portfolio_data=portfolio_data,
+                provider=provider
+            )
+        
+        # AI 응답 생성
+        response = await chat_service.achat(request.message)
+        
+        return ChatResponse(
+            response=response,
+            history=chat_service.get_history()
+        )
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"채팅 중 오류 발생: {str(e)}")
+
+@app.post("/chat/stream", tags=["AI Chat"])
+async def chat_stream_endpoint(request: ChatRequest):
+    """
+    스트리밍 방식으로 AI 챗봇과 대화
+    
+    Args:
+        request: 채팅 요청 (메시지, provider)
+        
+    Returns:
+        스트리밍 응답
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    global chat_service
+    
+    try:
+        # ChatService 초기화
+        if chat_service is None:
+            portfolio_data = None
+            if os.path.exists(PARSED_DATA_FILE):
+                with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+                    portfolio_data = json.load(f)
+            
+            provider = request.provider or os.getenv("AI_PROVIDER", "gemini")
+            chat_service = PortfolioAnalysisChat(
+                portfolio_data=portfolio_data,
+                provider=provider
+            )
+        
+        # 스트리밍 응답 생성
+        async def generate():
+            async for chunk in chat_service.stream_chat(request.message):
+                yield chunk
+        
+        return StreamingResponse(generate(), media_type="text/plain")
+    
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"스트리밍 중 오류 발생: {str(e)}")
+
+@app.post("/chat/analyze", tags=["AI Chat"])
+async def analyze_portfolio_endpoint():
+    """
+    포트폴리오 전체 분석
+    
+    Returns:
+        AI의 포트폴리오 분석 결과
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    global chat_service
+    
+    try:
+        # ChatService 초기화
+        if chat_service is None:
+            portfolio_data = None
+            if os.path.exists(PARSED_DATA_FILE):
+                with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+                    portfolio_data = json.load(f)
+            
+            if not portfolio_data:
+                raise HTTPException(
+                    status_code=404,
+                    detail="포트폴리오 데이터가 없습니다. CSV 파일을 먼저 업로드해주세요."
+                )
+            
+            chat_service = PortfolioAnalysisChat(
+                portfolio_data=portfolio_data,
+                provider=os.getenv("AI_PROVIDER", "gemini")
+            )
+        
+        # 포트폴리오 분석
+        analysis = chat_service.analyze_portfolio()
+        
+        return {
+            "analysis": analysis,
+            "history": chat_service.get_history()
+        }
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"분석 중 오류 발생: {str(e)}")
+
+@app.delete("/chat/history", tags=["AI Chat"])
+async def clear_chat_history():
+    """
+    채팅 히스토리 초기화
+    
+    Returns:
+        성공 메시지
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    global chat_service
+    
+    if chat_service:
+        chat_service.clear_history()
+    
+    return {"message": "채팅 히스토리가 초기화되었습니다."}
+
+@app.get("/chat/history", tags=["AI Chat"])
+async def get_chat_history():
+    """
+    채팅 히스토리 조회
+    
+    Returns:
+        대화 히스토리
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    global chat_service
+    
+    if chat_service is None:
+        return {"history": []}
+    
+    return {"history": chat_service.get_history()}
+
+@app.post("/chat/update-portfolio", tags=["AI Chat"])
+async def update_chat_portfolio():
+    """
+    ChatService의 포트폴리오 데이터 업데이트
+    (CSV 업로드 후 자동으로 호출하면 좋음)
+    
+    Returns:
+        성공 메시지
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    global chat_service
+    
+    try:
+        # 파싱된 데이터 로드
+        if not os.path.exists(PARSED_DATA_FILE):
+            raise HTTPException(
+                status_code=404,
+                detail="포트폴리오 데이터가 없습니다."
+            )
+        
+        with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+            portfolio_data = json.load(f)
+        
+        # ChatService 업데이트 또는 재생성
+        if chat_service is None:
+            chat_service = PortfolioAnalysisChat(
+                portfolio_data=portfolio_data,
+                provider=os.getenv("AI_PROVIDER", "gemini")
+            )
+        else:
+            chat_service.update_portfolio_data(portfolio_data)
+        
+        return {"message": "포트폴리오 데이터가 업데이트되었습니다."}
+    
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"업데이트 중 오류 발생: {str(e)}")
 
 if __name__ == "__main__":
     import uvicorn
