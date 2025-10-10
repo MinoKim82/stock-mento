@@ -1662,6 +1662,99 @@ async def update_chat_portfolio():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"업데이트 중 오류 발생: {str(e)}")
 
+@app.get("/chat/sessions", tags=["AI Chat"])
+async def list_chat_sessions():
+    """
+    저장된 채팅 세션 목록 조회
+    
+    Returns:
+        세션 목록
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    try:
+        from langchain_service import ChatService
+        sessions = ChatService.list_sessions()
+        return {"sessions": sessions}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"세션 목록 조회 실패: {str(e)}")
+
+@app.get("/chat/session/info", tags=["AI Chat"])
+async def get_current_session_info():
+    """
+    현재 세션 정보 조회
+    
+    Returns:
+        세션 정보
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    global chat_service
+    
+    if chat_service is None:
+        raise HTTPException(
+            status_code=404,
+            detail="활성화된 채팅 세션이 없습니다."
+        )
+    
+    return chat_service.get_session_info()
+
+class SessionRequest(BaseModel):
+    """세션 로드 요청 모델"""
+    session_id: str
+    provider: Optional[str] = None
+
+@app.post("/chat/session/load", tags=["AI Chat"])
+async def load_chat_session(request: SessionRequest):
+    """
+    특정 세션 로드
+    
+    Args:
+        request: 세션 ID 및 provider
+        
+    Returns:
+        로드된 세션 정보
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    global chat_service
+    
+    try:
+        # 포트폴리오 데이터 로드
+        portfolio_data = None
+        if os.path.exists(PARSED_DATA_FILE):
+            with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+                portfolio_data = json.load(f)
+        
+        # 세션 로드
+        provider = request.provider or os.getenv("AI_PROVIDER", "gemini")
+        chat_service = PortfolioAnalysisChat.load_session(
+            session_id=request.session_id,
+            portfolio_data=portfolio_data,
+            provider=provider
+        )
+        
+        return {
+            "message": f"세션 '{request.session_id}' 로드 완료",
+            "session_info": chat_service.get_session_info(),
+            "history": chat_service.get_history()
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"세션 로드 실패: {str(e)}")
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000)

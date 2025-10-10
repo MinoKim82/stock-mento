@@ -5,3 +5,4 @@ __pycache__/
 *.pyc
 currency_cache/
 parsed_data/
+chat_history/

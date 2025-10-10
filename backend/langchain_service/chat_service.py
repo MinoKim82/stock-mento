@@ -3,8 +3,11 @@ LangChain을 활용한 AI 챗봇 서비스
 OpenAI GPT와 Google Gemini를 지원합니다.
 """
 import os
-from typing import List, Dict, Optional, Literal
-from dataclasses import dataclass
+import json
+from typing import List, Dict, Optional, Literal, Any
+from dataclasses import dataclass, asdict
+from datetime import datetime
+from pathlib import Path
 from dotenv import load_dotenv
 
 # LangChain imports
@@ -23,6 +26,12 @@ class Message:
     """채팅 메시지 데이터 클래스"""
     role: Literal["user", "assistant", "system"]
     content: str
+    timestamp: Optional[str] = None
+    
+    def __post_init__(self):
+        """타임스탬프 자동 설정"""
+        if self.timestamp is None:
+            self.timestamp = datetime.now().isoformat()
 
 class ChatService:
     """AI 챗봇 서비스 클래스"""
@@ -32,7 +41,9 @@ class ChatService:
         provider: Literal["openai", "gemini"] = "gemini",
         model: Optional[str] = None,
         temperature: float = 0.7,
-        system_prompt: Optional[str] = None
+        system_prompt: Optional[str] = None,
+        session_id: Optional[str] = None,
+        storage_dir: Optional[str] = None
     ):
         """
         ChatService 초기화
@@ -42,10 +53,23 @@ class ChatService:
             model: 사용할 모델명 (None이면 기본값 사용)
             temperature: 생성 온도 (0.0 ~ 1.0)
             system_prompt: 시스템 프롬프트
+            session_id: 세션 ID (대화 히스토리 저장용)
+            storage_dir: 대화 히스토리 저장 디렉토리
         """
         self.provider = provider or os.getenv("AI_PROVIDER", "gemini")
         self.temperature = temperature
         self.system_prompt = system_prompt or self._get_default_system_prompt()
+        self.session_id = session_id or self._generate_session_id()
+        
+        # 저장 디렉토리 설정
+        if storage_dir:
+            self.storage_dir = Path(storage_dir)
+        else:
+            # 기본: backend/chat_history/
+            backend_dir = Path(__file__).parent.parent
+            self.storage_dir = backend_dir / "chat_history"
+        
+        self.storage_dir.mkdir(parents=True, exist_ok=True)
         
         # LLM 초기화
         self.llm = self._initialize_llm(model)
@@ -53,11 +77,79 @@ class ChatService:
         # 대화 히스토리
         self.chat_history: List[Message] = []
         
+        # 저장된 대화 히스토리 로드
+        self._load_history()
+        
         # 프롬프트 템플릿 생성
         self.prompt = self._create_prompt_template()
         
         # Chain 생성
         self.chain = self._create_chain()
+    
+    def _generate_session_id(self) -> str:
+        """세션 ID 생성"""
+        return datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    def _get_history_file_path(self) -> Path:
+        """히스토리 파일 경로 반환"""
+        return self.storage_dir / f"chat_{self.session_id}.json"
+    
+    def _load_history(self):
+        """저장된 대화 히스토리 로드"""
+        history_file = self._get_history_file_path()
+        
+        if history_file.exists():
+            try:
+                with open(history_file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    
+                # JSON을 Message 객체로 변환
+                self.chat_history = [
+                    Message(
+                        role=msg['role'],
+                        content=msg['content'],
+                        timestamp=msg.get('timestamp')
+                    )
+                    for msg in data.get('messages', [])
+                ]
+                
+                print(f"✅ 대화 히스토리 로드 완료: {len(self.chat_history)}개 메시지")
+            except Exception as e:
+                print(f"⚠️ 대화 히스토리 로드 실패: {str(e)}")
+                self.chat_history = []
+        else:
+            print(f"📝 새로운 대화 세션 시작: {self.session_id}")
+    
+    def _save_history(self):
+        """대화 히스토리를 파일에 저장"""
+        history_file = self._get_history_file_path()
+        
+        try:
+            # Message 객체를 딕셔너리로 변환
+            messages_dict = [
+                {
+                    'role': msg.role,
+                    'content': msg.content,
+                    'timestamp': msg.timestamp
+                }
+                for msg in self.chat_history
+            ]
+            
+            data = {
+                'session_id': self.session_id,
+                'provider': self.provider,
+                'created_at': self.chat_history[0].timestamp if self.chat_history else datetime.now().isoformat(),
+                'updated_at': datetime.now().isoformat(),
+                'message_count': len(self.chat_history),
+                'messages': messages_dict
+            }
+            
+            with open(history_file, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            
+            # print(f"💾 대화 히스토리 저장 완료: {len(self.chat_history)}개 메시지")
+        except Exception as e:
+            print(f"⚠️ 대화 히스토리 저장 실패: {str(e)}")
     
     def _get_default_system_prompt(self) -> str:
         """기본 시스템 프롬프트 반환"""
@@ -152,6 +244,9 @@ class ChatService:
         # AI 응답을 히스토리에 추가
         self.chat_history.append(Message(role="assistant", content=response))
         
+        # 히스토리 저장
+        self._save_history()
+        
         return response
     
     async def achat(self, user_message: str) -> str:
@@ -172,6 +267,9 @@ class ChatService:
         
         # AI 응답을 히스토리에 추가
         self.chat_history.append(Message(role="assistant", content=response))
+        
+        # 히스토리 저장
+        self._save_history()
         
         return response
     
@@ -196,17 +294,77 @@ class ChatService:
         
         # 완전한 응답을 히스토리에 추가
         self.chat_history.append(Message(role="assistant", content=full_response))
+        
+        # 히스토리 저장
+        self._save_history()
     
     def clear_history(self):
         """채팅 히스토리 초기화"""
         self.chat_history.clear()
+        # 파일도 삭제
+        history_file = self._get_history_file_path()
+        if history_file.exists():
+            history_file.unlink()
+            print(f"🗑️ 대화 히스토리 파일 삭제: {history_file.name}")
     
     def get_history(self) -> List[Dict[str, str]]:
         """채팅 히스토리 반환"""
         return [
-            {"role": msg.role, "content": msg.content}
+            {
+                "role": msg.role,
+                "content": msg.content,
+                "timestamp": msg.timestamp
+            }
             for msg in self.chat_history
         ]
+    
+    def get_session_info(self) -> Dict[str, Any]:
+        """세션 정보 반환"""
+        return {
+            "session_id": self.session_id,
+            "provider": self.provider,
+            "message_count": len(self.chat_history),
+            "storage_path": str(self._get_history_file_path()),
+            "created_at": self.chat_history[0].timestamp if self.chat_history else None,
+            "updated_at": self.chat_history[-1].timestamp if self.chat_history else None
+        }
+    
+    @classmethod
+    def list_sessions(cls, storage_dir: Optional[str] = None) -> List[Dict[str, Any]]:
+        """저장된 모든 세션 목록 반환"""
+        if storage_dir:
+            storage_path = Path(storage_dir)
+        else:
+            backend_dir = Path(__file__).parent.parent
+            storage_path = backend_dir / "chat_history"
+        
+        if not storage_path.exists():
+            return []
+        
+        sessions = []
+        for file in storage_path.glob("chat_*.json"):
+            try:
+                with open(file, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    sessions.append({
+                        "session_id": data.get("session_id"),
+                        "provider": data.get("provider"),
+                        "message_count": data.get("message_count", 0),
+                        "created_at": data.get("created_at"),
+                        "updated_at": data.get("updated_at"),
+                        "file_path": str(file)
+                    })
+            except Exception as e:
+                print(f"⚠️ 세션 파일 로드 실패 ({file.name}): {str(e)}")
+        
+        # 최신순 정렬
+        sessions.sort(key=lambda x: x.get("updated_at", ""), reverse=True)
+        return sessions
+    
+    @classmethod
+    def load_session(cls, session_id: str, storage_dir: Optional[str] = None, **kwargs):
+        """특정 세션 로드"""
+        return cls(session_id=session_id, storage_dir=storage_dir, **kwargs)
     
     def set_system_prompt(self, prompt: str):
         """시스템 프롬프트 변경"""
