@@ -4,3 +4,4 @@ csv_data/
 __pycache__/
 *.pyc
 currency_cache/
+parsed_data/

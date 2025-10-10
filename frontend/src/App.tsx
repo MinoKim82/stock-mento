@@ -22,9 +22,6 @@ function App() {
     clearCache,
     refreshData,
     clearError,
-    loadTransactionList,
-    loadAccountsDetailed,
-    loadYearlyReturns,
   } = usePortfolio();
 
 
@@ -44,14 +41,7 @@ function App() {
     }
   };
 
-  // 세션 변경 시 거래 내역과 계좌 상세 정보, 연도별 수익 로드
-  useEffect(() => {
-    if (sessionId) {
-      loadTransactionList(sessionId);
-      loadAccountsDetailed(sessionId);
-      loadYearlyReturns(sessionId);
-    }
-  }, [sessionId, loadTransactionList, loadAccountsDetailed, loadYearlyReturns]);
+  // 모든 데이터는 이제 getParsedData()로 한 번에 로드됨 (usePortfolio 내부에서 처리)
 
   return (
     <div className="min-h-screen bg-gray-100">
