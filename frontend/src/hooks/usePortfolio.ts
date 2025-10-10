@@ -77,30 +77,6 @@ export const usePortfolio = () => {
     }
   }, []);
 
-  const loadPortfolioData = useCallback(async (sessionId: string) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // 병렬로 모든 데이터 로드
-      const [summary, performance, risk] = await Promise.all([
-        api.getPortfolioSummary(sessionId),
-        api.getPortfolioPerformance(sessionId),
-        api.getPortfolioRisk(sessionId),
-      ]);
-      
-      setPortfolioSummary(summary);
-      setPortfolioPerformance(performance);
-      setPortfolioRisk(risk);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '포트폴리오 데이터 로드 중 오류가 발생했습니다.');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-  
   // 앱 시작 시 기존 CSV 파일이 있는지 확인
   useEffect(() => {
     if (!initialCheckDone) {
@@ -164,82 +140,6 @@ export const usePortfolio = () => {
     }
   }, [initialCheckDone]);
 
-  const loadFilteredPortfolioData = useCallback(async (
-    sessionId: string, 
-    filters: { owner?: string; broker?: string; account_type?: string }
-  ) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      // 필터가 적용된 경우 필터링된 데이터 로드, 그렇지 않으면 일반 데이터 로드
-      const hasFilters = filters.owner || filters.broker || filters.account_type;
-      
-      const [summary, performance] = await Promise.all([
-        hasFilters 
-          ? api.getFilteredPortfolioSummary(sessionId, filters)
-          : api.getPortfolioSummary(sessionId),
-        hasFilters 
-          ? api.getFilteredPortfolioPerformance(sessionId, filters)
-          : api.getPortfolioPerformance(sessionId),
-      ]);
-      
-      setPortfolioSummary(summary);
-      setPortfolioPerformance(performance);
-      
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '필터링된 포트폴리오 데이터 로드 중 오류가 발생했습니다.');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const loadTransactionList = useCallback(async (sessionId: string) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const transactions = await api.getAllTransactions(sessionId);
-      setTransactionList(transactions);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '거래 내역 로드 중 오류가 발생했습니다.');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const loadAccountsDetailed = useCallback(async (sessionId: string) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const accounts = await api.getAccountsDetailed(sessionId);
-      setAccountsDetailed(accounts);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '계좌별 상세 정보 로드 중 오류가 발생했습니다.');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
-  const loadYearlyReturns = useCallback(async (sessionId: string) => {
-    setIsLoading(true);
-    setError(null);
-    
-    try {
-      const returns = await api.getYearlyReturns(sessionId);
-      setYearlyReturns(returns);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '연도별 수익 내역 로드 중 오류가 발생했습니다.');
-      throw err;
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
-
   const loadCacheInfo = useCallback(async () => {
     try {
       const info = await api.getCacheInfo();
@@ -272,9 +172,25 @@ export const usePortfolio = () => {
 
   const refreshData = useCallback(async () => {
     if (sessionId) {
-      await loadPortfolioData(sessionId);
+      try {
+        const parsedData = await api.getParsedData();
+        
+        if (parsedData.portfolio_summary) setPortfolioSummary(parsedData.portfolio_summary);
+        if (parsedData.portfolio_performance) setPortfolioPerformance(parsedData.portfolio_performance);
+        if (parsedData.portfolio_risk) setPortfolioRisk(parsedData.portfolio_risk);
+        if (parsedData.accounts_detailed) setAccountsDetailed(parsedData.accounts_detailed);
+        if (parsedData.yearly_returns) setYearlyReturns(parsedData.yearly_returns);
+        
+        setTimeout(() => {
+          api.getAllTransactions(sessionId)
+            .then(transactions => setTransactionList(transactions))
+            .catch(err => console.error('거래 내역 로드 실패:', err));
+        }, 100);
+      } catch (err) {
+        setError(err instanceof Error ? err.message : '데이터 새로고침 중 오류가 발생했습니다.');
+      }
     }
-  }, [sessionId, loadPortfolioData]);
+  }, [sessionId]);
 
   const clearError = useCallback(() => {
     setError(null);
@@ -296,11 +212,6 @@ export const usePortfolio = () => {
     
     // 액션
     uploadCsv,
-    loadPortfolioData,
-    loadFilteredPortfolioData,
-    loadTransactionList,
-    loadAccountsDetailed,
-    loadYearlyReturns,
     loadCacheInfo,
     clearCache,
     refreshData,

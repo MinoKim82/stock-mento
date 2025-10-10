@@ -1,14 +1,8 @@
 import axios from 'axios';
 import type { 
   SessionInfo, 
-  PortfolioSummary, 
-  PortfolioPerformance, 
-  PortfolioRisk, 
   CacheInfo,
-  FilterOptions,
   TransactionList,
-  AccountsDetailed,
-  YearlyReturnsDetail,
   ParsedData
 } from '../types';
 
@@ -39,24 +33,6 @@ export const api = {
     return response.data;
   },
 
-  // 포트폴리오 요약
-  getPortfolioSummary: async (sessionId: string): Promise<PortfolioSummary> => {
-    const response = await apiClient.get(`/portfolio/summary/${sessionId}`);
-    return response.data;
-  },
-
-  // 포트폴리오 성과 분석
-  getPortfolioPerformance: async (sessionId: string): Promise<PortfolioPerformance> => {
-    const response = await apiClient.get(`/portfolio/performance/${sessionId}`);
-    return response.data;
-  },
-
-  // 포트폴리오 위험 분석
-  getPortfolioRisk: async (sessionId: string): Promise<PortfolioRisk> => {
-    const response = await apiClient.get(`/portfolio/risk/${sessionId}`);
-    return response.data;
-  },
-
   // 캐시 정보
   getCacheInfo: async (): Promise<CacheInfo> => {
     const response = await apiClient.get('/cache/info');
@@ -72,55 +48,9 @@ export const api = {
     }
   },
 
-  // 필터 옵션 조회
-  getFilterOptions: async (sessionId: string): Promise<FilterOptions> => {
-    const response = await apiClient.get(`/portfolio/filters/${sessionId}`);
-    return response.data;
-  },
-
-  // 필터링된 포트폴리오 요약
-  getFilteredPortfolioSummary: async (
-    sessionId: string, 
-    filters: { owner?: string; broker?: string; account_type?: string }
-  ): Promise<PortfolioSummary> => {
-    const params = new URLSearchParams();
-    if (filters.owner) params.append('owner', filters.owner);
-    if (filters.broker) params.append('broker', filters.broker);
-    if (filters.account_type) params.append('account_type', filters.account_type);
-    
-    const response = await apiClient.get(`/portfolio/summary-filtered/${sessionId}?${params.toString()}`);
-    return response.data;
-  },
-
-  // 필터링된 포트폴리오 성과 분석
-  getFilteredPortfolioPerformance: async (
-    sessionId: string, 
-    filters: { owner?: string; broker?: string; account_type?: string }
-  ): Promise<PortfolioPerformance> => {
-    const params = new URLSearchParams();
-    if (filters.owner) params.append('owner', filters.owner);
-    if (filters.broker) params.append('broker', filters.broker);
-    if (filters.account_type) params.append('account_type', filters.account_type);
-    
-    const response = await apiClient.get(`/portfolio/performance-filtered/${sessionId}?${params.toString()}`);
-    return response.data;
-  },
-
   // 전체 거래 내역 조회
   getAllTransactions: async (sessionId: string): Promise<TransactionList> => {
     const response = await apiClient.get(`/transactions/${sessionId}`);
-    return response.data;
-  },
-
-  // 계좌별 상세 정보 조회
-  getAccountsDetailed: async (sessionId: string): Promise<AccountsDetailed> => {
-    const response = await apiClient.get(`/portfolio/accounts-detailed/${sessionId}`);
-    return response.data;
-  },
-
-  // 연도별 수익 내역 조회
-  getYearlyReturns: async (sessionId: string): Promise<YearlyReturnsDetail[]> => {
-    const response = await apiClient.get(`/returns/yearly/${sessionId}`);
     return response.data;
   },
 
