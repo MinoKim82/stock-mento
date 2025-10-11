@@ -57,12 +57,15 @@ app.add_middleware(
 # 백엔드 디렉토리 기준 경로
 BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
 
+# 사용자 데이터 루트 디렉토리
+USER_DATA_DIR = os.path.join(os.path.dirname(BACKEND_DIR), "user_data")
+
 # CSV 파일 저장 디렉토리
-CSV_STORAGE_DIR = os.path.join(BACKEND_DIR, "csv_data")
+CSV_STORAGE_DIR = os.path.join(USER_DATA_DIR, "csv_data")
 CURRENT_CSV_FILE = os.path.join(CSV_STORAGE_DIR, "current_portfolio.csv")
 
 # 파싱된 데이터 캐시 디렉토리
-PARSED_DATA_DIR = os.path.join(BACKEND_DIR, "parsed_data")
+PARSED_DATA_DIR = os.path.join(USER_DATA_DIR, "parsed_data")
 PARSED_DATA_FILE = os.path.join(PARSED_DATA_DIR, "portfolio_data.json")
 
 # 디렉토리 생성

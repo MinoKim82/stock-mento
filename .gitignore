@@ -1,9 +1,8 @@
-csv_data/
+# 사용자 데이터
+user_data/
+
+# 기타
 *.log
 .env
 __pycache__/
 *.pyc
-currency_cache/
-parsed_data/
-chat_history/
-portfolio_docs/

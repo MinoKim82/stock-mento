@@ -67,9 +67,10 @@ class ChatService:
         if storage_dir:
             self.storage_dir = Path(storage_dir)
         else:
-            # 기본: backend/chat_history/
+            # 기본: user_data/chat_history/
             backend_dir = Path(__file__).parent.parent
-            self.storage_dir = backend_dir / "chat_history"
+            user_data_dir = backend_dir.parent / "user_data"
+            self.storage_dir = user_data_dir / "chat_history"
         
         self.storage_dir.mkdir(parents=True, exist_ok=True)
         
@@ -428,7 +429,8 @@ class PortfolioAnalysisChat(ChatService):
             
             # 마크다운 문서 저장 경로
             backend_dir = Path(__file__).parent.parent
-            docs_dir = backend_dir / "portfolio_docs"
+            user_data_dir = backend_dir.parent / "user_data"
+            docs_dir = user_data_dir / "portfolio_docs"
             docs_dir.mkdir(parents=True, exist_ok=True)
             
             # 기존 마크다운 파일 모두 삭제
