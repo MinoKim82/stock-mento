@@ -230,3 +230,38 @@ export interface YearlyReturnsDetail {
     };
   };
 }
+
+// AI Chat 관련 타입
+export interface ChatMessage {
+  role: 'user' | 'assistant' | 'system';
+  content: string;
+  timestamp?: string;
+}
+
+export interface ChatRequest {
+  message: string;
+  provider?: 'openai' | 'gemini';
+}
+
+export interface ChatResponse {
+  response: string;
+  history: ChatMessage[];
+}
+
+export interface ChatSession {
+  session_id: string;
+  provider: string;
+  message_count: number;
+  created_at: string;
+  updated_at: string;
+  file_path: string;
+}
+
+export interface ChatSessionInfo {
+  session_id: string;
+  provider: string;
+  message_count: number;
+  storage_path: string;
+  created_at: string | null;
+  updated_at: string | null;
+}

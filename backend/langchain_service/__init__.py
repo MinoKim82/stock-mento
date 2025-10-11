@@ -1,4 +1,4 @@
-from .chat_service import ChatService, Message
+from .chat_service import ChatService, Message, PortfolioAnalysisChat
 
-__all__ = ["ChatService", "Message"]
+__all__ = ["ChatService", "Message", "PortfolioAnalysisChat"]
 

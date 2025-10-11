@@ -17,6 +17,8 @@ from langchain_core.messages import HumanMessage, AIMessage, SystemMessage
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
+from langchain_core.documents import Document
+from langchain_community.document_loaders import TextLoader
 
 # .env 파일 로드
 load_dotenv()
@@ -374,14 +376,16 @@ class ChatService:
 
 
 class PortfolioAnalysisChat(ChatService):
-    """포트폴리오 분석 특화 챗봇"""
+    """포트폴리오 분석 특화 챗봇 (Document Loader 사용)"""
     
     def __init__(
         self,
         portfolio_data: Optional[Dict] = None,
         provider: Literal["openai", "gemini"] = "gemini",
         model: Optional[str] = None,
-        temperature: float = 0.7
+        temperature: float = 0.7,
+        session_id: Optional[str] = None,
+        storage_dir: Optional[str] = None
     ):
         """
         PortfolioAnalysisChat 초기화
@@ -391,8 +395,16 @@ class PortfolioAnalysisChat(ChatService):
             provider: AI 제공자
             model: 사용할 모델명
             temperature: 생성 온도
+            session_id: 세션 ID
+            storage_dir: 저장 디렉토리
         """
         self.portfolio_data = portfolio_data
+        self.portfolio_document: Optional[Document] = None
+        self.portfolio_markdown_path: Optional[Path] = None
+        
+        # 포트폴리오 마크다운 문서 생성
+        if portfolio_data:
+            self._generate_portfolio_document()
         
         # 포트폴리오 데이터 기반 시스템 프롬프트 생성
         system_prompt = self._create_portfolio_system_prompt()
@@ -401,8 +413,47 @@ class PortfolioAnalysisChat(ChatService):
             provider=provider,
             model=model,
             temperature=temperature,
-            system_prompt=system_prompt
+            system_prompt=system_prompt,
+            session_id=session_id,
+            storage_dir=storage_dir
         )
+    
+    def _generate_portfolio_document(self):
+        """포트폴리오 마크다운 문서 생성"""
+        try:
+            from .portfolio_document import generate_portfolio_markdown, save_portfolio_markdown
+            
+            # 마크다운 문서 저장 경로
+            backend_dir = Path(__file__).parent.parent
+            docs_dir = backend_dir / "portfolio_docs"
+            docs_dir.mkdir(parents=True, exist_ok=True)
+            
+            # 마크다운 파일 생성
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            markdown_path = docs_dir / f"portfolio_{timestamp}.md"
+            
+            markdown_content = generate_portfolio_markdown(self.portfolio_data)
+            
+            with open(markdown_path, 'w', encoding='utf-8') as f:
+                f.write(markdown_content)
+            
+            self.portfolio_markdown_path = markdown_path
+            
+            # Document 객체 생성
+            self.portfolio_document = Document(
+                page_content=markdown_content,
+                metadata={
+                    "source": "portfolio_data",
+                    "type": "markdown",
+                    "generated_at": timestamp
+                }
+            )
+            
+            print(f"✅ 포트폴리오 마크다운 문서 생성: {markdown_path}")
+            
+        except Exception as e:
+            print(f"⚠️ 포트폴리오 문서 생성 실패: {str(e)}")
+            self.portfolio_document = None
     
     def _create_portfolio_system_prompt(self) -> str:
         """포트폴리오 데이터 기반 시스템 프롬프트 생성"""
@@ -417,8 +468,22 @@ class PortfolioAnalysisChat(ChatService):
 
 항상 친절하고 전문적인 답변을 제공하며, 투자 조언은 참고용임을 명시합니다."""
         
-        if self.portfolio_data:
-            # 포트폴리오 요약 정보 추가
+        if self.portfolio_document:
+            # 마크다운 문서 내용을 시스템 프롬프트에 포함
+            portfolio_info = f"""
+
+아래는 사용자의 상세한 포트폴리오 데이터입니다:
+
+---
+{self.portfolio_document.page_content[:10000]}  
+---
+
+위 포트폴리오 데이터를 바탕으로 사용자의 질문에 답변해주세요.
+데이터에 명시된 정확한 수치를 사용하여 답변하세요."""
+            
+            base_prompt += portfolio_info
+        elif self.portfolio_data:
+            # 문서 생성 실패 시 요약 정보만 사용
             summary = self.portfolio_data.get("portfolio_summary", {})
             if summary:
                 total_value = summary.get("total_value", 0)
@@ -428,7 +493,7 @@ class PortfolioAnalysisChat(ChatService):
                 
                 portfolio_info = f"""
 
-현재 사용자의 포트폴리오 정보:
+현재 사용자의 포트폴리오 요약:
 - 총 평가액: ₩{total_value:,.0f}
 - 총 투자금: ₩{total_investment:,.0f}
 - 총 손익: ₩{total_gain_loss:,.0f} ({total_gain_loss_rate:.2f}%)
@@ -442,6 +507,11 @@ class PortfolioAnalysisChat(ChatService):
     def update_portfolio_data(self, portfolio_data: Dict):
         """포트폴리오 데이터 업데이트"""
         self.portfolio_data = portfolio_data
+        
+        # 마크다운 문서 재생성
+        self._generate_portfolio_document()
+        
+        # 시스템 프롬프트 업데이트
         self.set_system_prompt(self._create_portfolio_system_prompt())
     
     def analyze_portfolio(self) -> str:

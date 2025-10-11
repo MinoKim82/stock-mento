@@ -69,6 +69,15 @@ export const usePortfolio = () => {
           .catch(err => console.error('거래 내역 로드 실패:', err));
       }, 100);
       
+      // AI 챗봇의 포트폴리오 데이터 업데이트
+      try {
+        await api.updateChatPortfolio();
+        console.log('✅ AI 챗봇 포트폴리오 데이터 업데이트 완료');
+      } catch (err) {
+        console.error('⚠️ AI 챗봇 포트폴리오 데이터 업데이트 실패:', err);
+        // 챗봇 업데이트 실패는 전체 업로드를 실패로 처리하지 않음
+      }
+      
     } catch (err) {
       setError(err instanceof Error ? err.message : 'CSV 업로드 중 오류가 발생했습니다.');
       throw err;

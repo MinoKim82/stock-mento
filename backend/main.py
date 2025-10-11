@@ -1461,26 +1461,51 @@ async def chat_endpoint(request: ChatRequest):
             # 파싱된 데이터 로드
             portfolio_data = None
             if os.path.exists(PARSED_DATA_FILE):
-                with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
-                    portfolio_data = json.load(f)
+                try:
+                    with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+                        portfolio_data = json.load(f)
+                    print(f"✅ 포트폴리오 데이터 로드 완료: {PARSED_DATA_FILE}")
+                except Exception as load_error:
+                    print(f"⚠️ 포트폴리오 데이터 로드 실패: {load_error}")
+                    portfolio_data = None
+            else:
+                print(f"⚠️ 파싱된 데이터 파일이 없습니다: {PARSED_DATA_FILE}")
             
             provider = request.provider or os.getenv("AI_PROVIDER", "gemini")
-            chat_service = PortfolioAnalysisChat(
-                portfolio_data=portfolio_data,
-                provider=provider
-            )
+            print(f"🤖 ChatService 초기화: provider={provider}, has_data={portfolio_data is not None}")
+            
+            try:
+                chat_service = PortfolioAnalysisChat(
+                    portfolio_data=portfolio_data,
+                    provider=provider
+                )
+                print("✅ ChatService 초기화 완료")
+            except Exception as init_error:
+                print(f"❌ ChatService 초기화 실패: {init_error}")
+                raise HTTPException(
+                    status_code=500,
+                    detail=f"AI 챗봇 초기화 실패: {str(init_error)}"
+                )
         
         # AI 응답 생성
+        print(f"💬 사용자 메시지: {request.message[:50]}...")
         response = await chat_service.achat(request.message)
+        print(f"🤖 AI 응답 생성 완료: {len(response)}글자")
         
         return ChatResponse(
             response=response,
             history=chat_service.get_history()
         )
     
+    except HTTPException:
+        raise
     except ValueError as e:
+        print(f"❌ ValueError: {e}")
         raise HTTPException(status_code=400, detail=str(e))
     except Exception as e:
+        print(f"❌ 예외 발생: {type(e).__name__}: {e}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(status_code=500, detail=f"채팅 중 오류 발생: {str(e)}")
 
 @app.post("/chat/stream", tags=["AI Chat"])
