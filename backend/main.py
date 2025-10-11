@@ -96,23 +96,15 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# 백엔드 디렉토리 기준 경로
-BACKEND_DIR = os.path.dirname(os.path.abspath(__file__))
+# 설정 파일에서 경로 가져오기
+from config import settings
+CURRENT_CSV_FILE = settings.CURRENT_CSV_FILE
+PARSED_DATA_FILE = settings.PARSED_DATA_FILE
+CSV_STORAGE_DIR = settings.CSV_STORAGE_DIR
+PARSED_DATA_DIR = settings.PARSED_DATA_DIR
 
-# 사용자 데이터 루트 디렉토리
-USER_DATA_DIR = os.path.join(os.path.dirname(BACKEND_DIR), "user_data")
-
-# CSV 파일 저장 디렉토리
-CSV_STORAGE_DIR = os.path.join(USER_DATA_DIR, "csv_data")
-CURRENT_CSV_FILE = os.path.join(CSV_STORAGE_DIR, "current_portfolio.csv")
-
-# 파싱된 데이터 캐시 디렉토리
-PARSED_DATA_DIR = os.path.join(USER_DATA_DIR, "parsed_data")
-PARSED_DATA_FILE = os.path.join(PARSED_DATA_DIR, "portfolio_data.json")
-
-# 디렉토리 생성
-os.makedirs(CSV_STORAGE_DIR, exist_ok=True)
-os.makedirs(PARSED_DATA_DIR, exist_ok=True)
+# 유틸리티 함수
+from utils import parse_account_info, get_account_filters
 
 # TransactionParser 인스턴스 (단일 인스턴스로 변경)
 current_parser: Optional[TransactionParser] = None
@@ -426,56 +418,7 @@ def load_existing_csv():
     else:
         print("기존 CSV 파일이 없습니다. CSV 파일을 업로드해주세요.")
 
-# 계좌 정보 파싱 유틸리티 함수들
-def parse_account_info(account_name: str) -> Dict[str, str]:
-    """
-    계좌명에서 소유자, 증권사, 계좌타입을 추출
-    예: "민호 토스 종합매매 해외 예수금" -> {"owner": "민호", "broker": "토스", "account_type": "종합매매 해외"}
-    """
-    # "예수금" 제거
-    clean_name = account_name.replace(" 예수금", "").replace(" 예수", "")
-    
-    # 공백으로 분할
-    parts = clean_name.split()
-    
-    if len(parts) >= 3:
-        owner = parts[0]  # 첫 번째: 소유자
-        broker = parts[1]  # 두 번째: 증권사
-        # 나머지: 계좌 타입
-        account_type = " ".join(parts[2:])
-        
-        return {
-            "owner": owner,
-            "broker": broker,
-            "account_type": account_type
-        }
-    
-    # 파싱 실패 시 기본값 반환
-    return {
-        "owner": "알 수 없음",
-        "broker": "알 수 없음", 
-        "account_type": clean_name
-    }
-
-def get_account_filters(parser: TransactionParser) -> Dict[str, List[str]]:
-    """모든 계좌에서 필터 옵션들을 추출"""
-    owners = set()
-    brokers = set()
-    account_types = set()
-    
-    # 모든 계좌 정보 추출
-    accounts = parser.get_accounts()
-    for account in accounts:
-        account_info = parse_account_info(account.account_name)
-        owners.add(account_info["owner"])
-        brokers.add(account_info["broker"])
-        account_types.add(account_info["account_type"])
-    
-    return {
-        "owners": sorted(list(owners)),
-        "brokers": sorted(list(brokers)),
-        "account_types": sorted(list(account_types))
-    }
+# 계좌 정보 파싱 유틸리티 함수들은 utils 모듈로 이동됨
 
 @app.get("/")
 async def root():
