@@ -421,18 +421,32 @@ class PortfolioAnalysisChat(ChatService):
         )
     
     def _generate_portfolio_document(self):
-        """포트폴리오 마크다운 문서 생성"""
+        """포트폴리오 마크다운 문서 생성 (이전 문서 삭제)"""
         try:
             from .portfolio_document import generate_portfolio_markdown, save_portfolio_markdown
+            import glob
             
             # 마크다운 문서 저장 경로
             backend_dir = Path(__file__).parent.parent
             docs_dir = backend_dir / "portfolio_docs"
             docs_dir.mkdir(parents=True, exist_ok=True)
             
-            # 마크다운 파일 생성
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-            markdown_path = docs_dir / f"portfolio_{timestamp}.md"
+            # 기존 마크다운 파일 모두 삭제
+            existing_files = glob.glob(str(docs_dir / "portfolio_*.md"))
+            deleted_count = 0
+            for file_path in existing_files:
+                try:
+                    os.remove(file_path)
+                    deleted_count += 1
+                except Exception as e:
+                    print(f"⚠️ 파일 삭제 실패 {file_path}: {e}")
+            
+            if deleted_count > 0:
+                print(f"🗑️  이전 마크다운 문서 {deleted_count}개 삭제")
+            
+            # 새 마크다운 파일 생성
+            # 타임스탬프 없이 고정된 이름 사용
+            markdown_path = docs_dir / "portfolio_current.md"
             
             markdown_content = generate_portfolio_markdown(self.portfolio_data)
             
@@ -447,7 +461,7 @@ class PortfolioAnalysisChat(ChatService):
                 metadata={
                     "source": "portfolio_data",
                     "type": "markdown",
-                    "generated_at": timestamp
+                    "generated_at": datetime.now().isoformat()
                 }
             )
             
