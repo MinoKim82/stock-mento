@@ -185,11 +185,13 @@ class ChatService:
             if not api_key:
                 raise ValueError("GOOGLE_API_KEY가 설정되지 않았습니다.")
             
-            model_name = model or "gemini-1.5-flash"
+            # Gemini 2.5 Flash 모델 사용
+            model_name = model or "gemini-2.0-flash-exp"
             return ChatGoogleGenerativeAI(
                 google_api_key=api_key,
                 model=model_name,
-                temperature=self.temperature
+                temperature=self.temperature,
+                convert_system_message_to_human=True  # 시스템 메시지 변환
             )
         
         else:
