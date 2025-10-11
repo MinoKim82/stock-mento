@@ -19,6 +19,16 @@ from langchain_core.output_parsers import StrOutputParser
 from langchain_core.runnables import RunnablePassthrough
 from langchain_core.documents import Document
 from langchain_community.document_loaders import TextLoader
+import requests
+from bs4 import BeautifulSoup
+
+# Tavily Search 사용
+try:
+    from tavily import TavilyClient
+    TAVILY_AVAILABLE = True
+except ImportError:
+    TAVILY_AVAILABLE = False
+    print("⚠️ tavily-python 패키지가 설치되지 않았습니다.")
 
 # .env 파일 로드
 load_dotenv()
@@ -76,6 +86,9 @@ class ChatService:
         
         # LLM 초기화
         self.llm = self._initialize_llm(model)
+        
+        # 웹 검색 도구 초기화
+        self.search_tool = self._initialize_search_tool()
         
         # 대화 히스토리
         self.chat_history: List[Message] = []
@@ -180,6 +193,11 @@ class ChatService:
 - 공격적인 조언을 할 때도 데이터와 논리에 근거하여 설명하세요.
 - 단, 투자의 위험성과 변동성도 함께 언급하되, 기회를 강조하세요.
 
+웹 검색 기능 활용:
+- 최신 시장 동향, 뉴스, 업종별 동향 등이 필요할 때 웹 검색을 활용할 수 있습니다.
+- 사용자가 최신 정보를 요청하거나, 특정 종목/섹터의 최근 동향을 물어보면 웹 검색을 통해 정보를 찾아서 답변하세요.
+- 검색 결과를 바탕으로 공격적이고 구체적인 투자 전략을 제시하세요.
+
 항상 열정적이고 적극적인 톤으로 답변을 제공하며, 최종 투자 결정은 사용자의 판단임을 명시합니다."""
     
     def _initialize_llm(self, model: Optional[str]):
@@ -213,6 +231,220 @@ class ChatService:
         else:
             raise ValueError(f"지원하지 않는 provider: {self.provider}")
     
+    def _initialize_search_tool(self) -> bool:
+        """웹 검색 도구 초기화 (Tavily Search)"""
+        if TAVILY_AVAILABLE:
+            # Tavily API 키 확인
+            self.tavily_api_key = os.getenv("TAVILY_API_KEY")
+            if self.tavily_api_key:
+                try:
+                    self.tavily_client = TavilyClient(api_key=self.tavily_api_key)
+                    print("✅ 웹 검색 도구 초기화 완료 (Tavily Search + 네이버 금융)")
+                    return True
+                except Exception as e:
+                    print(f"⚠️ Tavily 초기화 실패: {e}")
+                    return False
+            else:
+                print("⚠️ TAVILY_API_KEY가 설정되지 않았습니다")
+                print("💡 .env 파일에 TAVILY_API_KEY를 추가하세요")
+                print("💡 무료 API 키: https://tavily.com (월 1000회 무료)")
+                return False
+        else:
+            print("⚠️ Tavily 검색을 사용할 수 없습니다")
+            print("💡 설치: pip install tavily-python")
+            return False
+    
+    def _fetch_page_content(self, url: str) -> str:
+        """웹 페이지에서 텍스트 추출"""
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            response = requests.get(url, headers=headers, timeout=5)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # 스크립트와 스타일 제거
+            for script in soup(["script", "style"]):
+                script.decompose()
+            
+            # 텍스트 추출
+            text = soup.get_text(separator=' ', strip=True)
+            return text[:500]  # 500자로 제한
+        except Exception as e:
+            return ""
+    
+    def _fetch_naver_kospi(self) -> str:
+        """네이버 금융에서 코스피 지수 직접 가져오기"""
+        try:
+            url = "https://finance.naver.com/sise/"
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            response = requests.get(url, headers=headers, timeout=10)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # 코스피 지수 찾기
+            kospi_now = soup.select_one('#KOSPI_now')
+            kospi_change = soup.select_one('#KOSPI_change')
+            kospi_rate = soup.select_one('#KOSPI_rate')
+            
+            if kospi_now:
+                result = f"코스피 지수: {kospi_now.text.strip()}"
+                if kospi_change:
+                    result += f" (전일대비: {kospi_change.text.strip()}"
+                if kospi_rate:
+                    result += f", {kospi_rate.text.strip()})"
+                return result
+            return ""
+        except Exception as e:
+            print(f"⚠️ 네이버 금융 파싱 실패: {e}")
+            return ""
+    
+    def _fetch_naver_stock(self, stock_name: str) -> str:
+        """네이버 금융에서 특정 주식 정보 검색"""
+        try:
+            # 네이버 금융 검색
+            search_url = f"https://finance.naver.com/search/searchList.naver?query={stock_name}"
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            response = requests.get(search_url, headers=headers, timeout=10)
+            soup = BeautifulSoup(response.content, 'html.parser')
+            
+            # 첫 번째 검색 결과 찾기
+            first_result = soup.select_one('.tltle')
+            if first_result:
+                stock_link = first_result.get('href', '')
+                if stock_link:
+                    # 종목 페이지 방문
+                    stock_url = f"https://finance.naver.com{stock_link}"
+                    response = requests.get(stock_url, headers=headers, timeout=10)
+                    soup = BeautifulSoup(response.content, 'html.parser')
+                    
+                    # 주가 정보 추출
+                    price_now = soup.select_one('.no_today .blind')
+                    price_change = soup.select_one('.no_exday .blind')
+                    price_rate = soup.select_one('.no_exday em span')
+                    
+                    if price_now:
+                        result = f"{stock_name} 현재가: {price_now.text.strip()}원"
+                        if price_change and price_rate:
+                            result += f" (전일대비: {price_change.text.strip()}원, {price_rate.text.strip()})"
+                        return result
+            return ""
+        except Exception as e:
+            print(f"⚠️ 네이버 금융 종목 검색 실패: {e}")
+            return ""
+    
+    def search_web(self, query: str, max_results: int = 5) -> str:
+        """
+        웹 검색 수행 (네이버 금융 직접 파싱 + Tavily Search)
+        
+        Args:
+            query: 검색 쿼리
+            max_results: 최대 결과 수
+            
+        Returns:
+            검색 결과 텍스트
+        """
+        if not self.search_tool:
+            return "웹 검색 기능을 사용할 수 없습니다."
+        
+        try:
+            search_results = []
+            
+            # 코스피/코스닥 지수는 네이버 금융에서 직접 가져오기
+            if "코스피" in query:
+                naver_data = self._fetch_naver_kospi()
+                if naver_data:
+                    search_results.append(f"[네이버 금융 실시간]\n{naver_data}")
+                    print(f"✅ 네이버 금융 파싱 완료: {naver_data}")
+            
+            # 주요 종목명이 있으면 네이버 금융에서 직접 검색
+            major_stocks = ["삼성전자", "SK하이닉스", "현대차", "NAVER", "네이버", "카카오", 
+                           "LG전자", "포스코", "기아", "삼성바이오로직스", "셀트리온"]
+            for stock in major_stocks:
+                if stock in query:
+                    naver_stock = self._fetch_naver_stock(stock)
+                    if naver_stock:
+                        search_results.append(f"[네이버 금융 실시간]\n{naver_stock}")
+                        print(f"✅ 네이버 금융 종목 파싱 완료: {naver_stock}")
+                    break
+            
+            # 검색어 최적화
+            enhanced_query = query
+            if "코스피" in query:
+                enhanced_query = "코스피 지수 현재 증시"
+            elif "코스닥" in query:
+                enhanced_query = "코스닥 지수 현재 증시"
+            elif any(stock in query for stock in major_stocks):
+                enhanced_query = f"{query} 주가 시세 뉴스"
+            
+            # Tavily 웹 검색
+            if TAVILY_AVAILABLE and hasattr(self, 'tavily_client'):
+                try:
+                    print(f"🔍 Tavily 검색: {enhanced_query}")
+                    
+                    # Tavily 검색 수행
+                    tavily_response = self.tavily_client.search(
+                        query=enhanced_query,
+                        search_depth="basic",
+                        max_results=max_results,
+                        include_answer=True,
+                        include_raw_content=False
+                    )
+                    
+                    # 검색 결과 파싱
+                    if tavily_response.get('results'):
+                        for i, result in enumerate(tavily_response['results'], 1):
+                            url = result.get('url', '')
+                            title = result.get('title', '')
+                            content = result.get('content', '')
+                            
+                            # 신뢰할 수 있는 출처 우선
+                            is_trusted = any(domain in url for domain in ['naver.com', 'daum.net', 'mk.co.kr', 
+                                                                           'hankyung.com', 'chosun.com', 'khan.co.kr',
+                                                                           'finance.', 'news.', 'investing.com'])
+                            
+                            if is_trusted or len(search_results) < max_results + 3:
+                                result_text = f"{len(search_results) + 1}. {title}"
+                                if content:
+                                    result_text += f"\n{content[:300]}"
+                                result_text += f"\n출처: {url}"
+                                
+                                search_results.append(result_text)
+                                print(f"  ✓ [{len(search_results)}] {title[:50]}...")
+                                
+                                if len(search_results) >= max_results + 3:
+                                    break
+                    
+                    # Tavily의 AI 요약 답변 추가
+                    if tavily_response.get('answer'):
+                        answer = tavily_response['answer']
+                        search_results.insert(1 if len(search_results) > 0 else 0, 
+                                            f"[AI 요약]\n{answer}")
+                        print(f"✅ Tavily AI 요약 추가")
+                    
+                    if search_results:
+                        combined = "\n\n".join(search_results)
+                        print(f"✅ Tavily 검색 완료: {len(search_results)}개 결과, {len(combined)}자")
+                        return combined[:2000]
+                        
+                except Exception as e:
+                    print(f"⚠️ Tavily 검색 실패: {str(e)}")
+                    import traceback
+                    traceback.print_exc()
+            
+            # 네이버 데이터라도 있으면 반환
+            if search_results:
+                return "\n\n".join(search_results)[:2000]
+            
+            return "검색 결과를 찾을 수 없습니다."
+            
+        except Exception as e:
+            print(f"⚠️ 웹 검색 실패: {str(e)}")
+            import traceback
+            traceback.print_exc()
+            return f"검색 중 오류가 발생했습니다: {str(e)}"
+    
     def _create_prompt_template(self) -> ChatPromptTemplate:
         """프롬프트 템플릿 생성"""
         return ChatPromptTemplate.from_messages([
@@ -245,6 +477,25 @@ class ChatService:
                 messages.append(SystemMessage(content=msg.content))
         return messages
     
+    def _should_search_web(self, user_message: str) -> bool:
+        """사용자 메시지에서 웹 검색이 필요한지 판단"""
+        # 코스피/코스닥 지수 관련
+        if any(keyword in user_message for keyword in ["코스피", "코스닥", "지수"]):
+            return True
+        
+        # 주식/주가 관련 키워드
+        stock_keywords = ["주가", "주식", "시세", "현재가", "가격"]
+        if any(keyword in user_message for keyword in stock_keywords):
+            return True
+        
+        # 최신 정보 관련 키워드
+        search_keywords = [
+            "최신", "뉴스", "동향", "시황", "전망", "분석", "예측",
+            "상승", "하락", "급등", "급락", "이슈", "발표", "실적",
+            "현재", "오늘", "최근", "요즘", "트렌드", "추세", "어때"
+        ]
+        return any(keyword in user_message for keyword in search_keywords)
+    
     def chat(self, user_message: str) -> str:
         """
         사용자 메시지를 받아 AI 응답 생성
@@ -258,8 +509,21 @@ class ChatService:
         # 사용자 메시지를 히스토리에 추가
         self.chat_history.append(Message(role="user", content=user_message))
         
-        # AI 응답 생성
-        response = self.chain.invoke(user_message)
+        # 웹 검색이 필요한지 판단
+        search_context = ""
+        if self._should_search_web(user_message) and self.search_tool:
+            try:
+                print(f"🔍 웹 검색 수행: {user_message[:50]}...")
+                search_results = self.search_web(user_message)
+                if search_results and "오류" not in search_results:
+                    search_context = f"\n\n[최신 시장 정보 검색 결과]\n{search_results}\n\n위 최신 정보를 참고하여 답변해주세요."
+                    print(f"✅ 검색 완료: {len(search_results)}자")
+            except Exception as e:
+                print(f"⚠️ 웹 검색 중 오류: {str(e)}")
+        
+        # AI 응답 생성 (검색 결과 포함)
+        enhanced_message = user_message + search_context
+        response = self.chain.invoke(enhanced_message)
         
         # AI 응답을 히스토리에 추가
         self.chat_history.append(Message(role="assistant", content=response))
@@ -282,8 +546,21 @@ class ChatService:
         # 사용자 메시지를 히스토리에 추가
         self.chat_history.append(Message(role="user", content=user_message))
         
-        # AI 응답 생성
-        response = await self.chain.ainvoke(user_message)
+        # 웹 검색이 필요한지 판단
+        search_context = ""
+        if self._should_search_web(user_message) and self.search_tool:
+            try:
+                print(f"🔍 웹 검색 수행: {user_message[:50]}...")
+                search_results = self.search_web(user_message)
+                if search_results and "오류" not in search_results:
+                    search_context = f"\n\n[최신 시장 정보 검색 결과]\n{search_results}\n\n위 최신 정보를 참고하여 답변해주세요."
+                    print(f"✅ 검색 완료: {len(search_results)}자")
+            except Exception as e:
+                print(f"⚠️ 웹 검색 중 오류: {str(e)}")
+        
+        # AI 응답 생성 (검색 결과 포함)
+        enhanced_message = user_message + search_context
+        response = await self.chain.ainvoke(enhanced_message)
         
         # AI 응답을 히스토리에 추가
         self.chat_history.append(Message(role="assistant", content=response))

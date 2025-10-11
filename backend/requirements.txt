@@ -15,3 +15,4 @@ langchain-openai>=0.1.0
 langchain-google-genai>=1.0.0
 langchain-core>=0.1.0
 langchain-community>=0.0.20
+tavily-python>=0.3.0
