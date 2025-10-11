@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { logger } from '../utils/logger';
 import type { 
   SessionInfo, 
   CacheInfo,
@@ -20,6 +21,44 @@ export const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// 요청 인터셉터 - 로깅
+apiClient.interceptors.request.use(
+  (config) => {
+    logger.debug(`→ API Request: ${config.method?.toUpperCase()} ${config.url}`, {
+      params: config.params,
+      data: config.data,
+    });
+    return config;
+  },
+  (error) => {
+    logger.error('API Request Error', error);
+    return Promise.reject(error);
+  }
+);
+
+// 응답 인터셉터 - 로깅 및 에러 처리
+apiClient.interceptors.response.use(
+  (response) => {
+    logger.debug(`← API Response: ${response.config.method?.toUpperCase()} ${response.config.url}`, {
+      status: response.status,
+      data: response.data,
+    });
+    return response;
+  },
+  (error) => {
+    const method = error.config?.method?.toUpperCase();
+    const url = error.config?.url;
+    
+    logger.error(`✗ API Error: ${method} ${url}`, error, {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      data: error.response?.data,
+    });
+    
+    return Promise.reject(error);
+  }
+);
 
 // API 함수들
 export const api = {

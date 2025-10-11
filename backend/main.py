@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import os
@@ -9,6 +9,17 @@ import uuid
 import io
 import pandas as pd
 from dataclasses import asdict
+import time
+
+# 로깅 설정
+from logger_config import (
+    main_logger as logger,
+    error_logger,
+    log_exception,
+    log_api_call,
+    log_startup,
+    log_shutdown
+)
 
 # pp 패키지에서 데이터 처리 클래스와 모델 import
 from pp import (
@@ -44,6 +55,37 @@ except ImportError:
     print("pip install langchain langchain-openai langchain-google-genai python-dotenv")
 
 app = FastAPI(title="Stock Portfolio API", version="1.0.0")
+
+# 로깅 미들웨어
+@app.middleware("http")
+async def log_requests(request: Request, call_next):
+    start_time = time.time()
+    
+    # 요청 로깅
+    logger.info(f"→ {request.method} {request.url.path}")
+    
+    try:
+        response = await call_next(request)
+        duration_ms = (time.time() - start_time) * 1000
+        
+        # 응답 로깅
+        log_api_call(
+            request.url.path,
+            request.method,
+            response.status_code,
+            duration_ms
+        )
+        
+        if response.status_code >= 400:
+            logger.warning(f"✗ {request.method} {request.url.path} | Status: {response.status_code}")
+        else:
+            logger.debug(f"✓ {request.method} {request.url.path} | Status: {response.status_code}")
+        
+        return response
+    except Exception as e:
+        duration_ms = (time.time() - start_time) * 1000
+        log_exception(logger, e, f"Request failed: {request.method} {request.url.path}")
+        raise
 
 # CORS 설정
 app.add_middleware(
@@ -533,23 +575,32 @@ async def upload_csv(file: UploadFile = File(...)):
     """CSV 파일을 디스크에 저장하고 로드"""
     global current_parser
     
+    logger.info(f"📤 CSV 파일 업로드 시작: {file.filename}")
+    
     if not file.filename.endswith('.csv'):
+        logger.warning(f"❌ 잘못된 파일 형식: {file.filename}")
         raise HTTPException(status_code=400, detail="CSV 파일만 업로드 가능합니다.")
     
     try:
         # CSV 파일 내용 읽기
         csv_content = await file.read()
         csv_text = csv_content.decode('utf-8')
+        logger.info(f"📄 CSV 파일 읽기 완료: {len(csv_text)} bytes")
         
         # 디스크에 저장
         with open(CURRENT_CSV_FILE, 'w', encoding='utf-8') as f:
             f.write(csv_text)
+        logger.info(f"💾 CSV 파일 저장 완료: {CURRENT_CSV_FILE}")
         
         # TransactionParser 인스턴스 생성
+        logger.info("🔄 TransactionParser 생성 중...")
         current_parser = TransactionParser(CURRENT_CSV_FILE, yahoo_client=yahoo_client)
+        logger.info("✅ TransactionParser 생성 완료")
         
         # 데이터 파싱 및 캐싱
+        logger.info("📊 데이터 파싱 및 캐싱 시작...")
         parse_and_cache_data(current_parser)
+        logger.info("✅ 데이터 파싱 및 캐싱 완료")
         
         return {
             "message": "CSV 파일이 성공적으로 업로드되고 파싱되었습니다.",
@@ -559,6 +610,7 @@ async def upload_csv(file: UploadFile = File(...)):
         }
     except Exception as e:
         current_parser = None
+        log_exception(logger, e, f"CSV 파일 처리 중 오류: {file.filename}")
         raise HTTPException(status_code=400, detail=f"CSV 파일 처리 중 오류가 발생했습니다: {str(e)}")
 
 @app.get("/data/parsed")
@@ -1423,7 +1475,18 @@ async def get_yearly_returns(session_id: str):
 @app.on_event("startup")
 async def startup_event():
     """서버 시작 시 기존 CSV 파일 로드"""
-    load_existing_csv()
+    log_startup()
+    logger.info("📂 CSV 파일 로드 중...")
+    try:
+        load_existing_csv()
+        logger.info("✅ 서버 시작 완료")
+    except Exception as e:
+        log_exception(logger, e, "서버 시작 중 오류")
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """서버 종료 시"""
+    log_shutdown()
 
 # ============================================
 # LangChain AI Chat API
