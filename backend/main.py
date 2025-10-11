@@ -1475,20 +1475,39 @@ async def chat_endpoint(request: ChatRequest):
                 print(f"⚠️ 파싱된 데이터 파일이 없습니다: {PARSED_DATA_FILE}")
             
             provider = request.provider or os.getenv("AI_PROVIDER", "gemini")
-            print(f"🤖 ChatService 초기화: provider={provider}, has_data={portfolio_data is not None}")
             
-            try:
-                chat_service = PortfolioAnalysisChat(
-                    portfolio_data=portfolio_data,
-                    provider=provider
-                )
-                print("✅ ChatService 초기화 완료")
-            except Exception as init_error:
-                print(f"❌ ChatService 초기화 실패: {init_error}")
-                raise HTTPException(
-                    status_code=500,
-                    detail=f"AI 챗봇 초기화 실패: {str(init_error)}"
-                )
+            # 이전 세션이 있으면 로드, 없으면 새로 생성
+            latest_session_id = PortfolioAnalysisChat.get_latest_session_id()
+            
+            if latest_session_id:
+                print(f"📂 이전 대화 세션 로드: {latest_session_id}")
+                try:
+                    chat_service = PortfolioAnalysisChat.load_session(
+                        session_id=latest_session_id,
+                        portfolio_data=portfolio_data,
+                        provider=provider
+                    )
+                    print(f"✅ 대화 세션 로드 완료: {len(chat_service.chat_history)}개 메시지")
+                except Exception as load_error:
+                    print(f"⚠️ 세션 로드 실패, 새 세션 생성: {load_error}")
+                    chat_service = PortfolioAnalysisChat(
+                        portfolio_data=portfolio_data,
+                        provider=provider
+                    )
+            else:
+                print(f"🤖 새 ChatService 초기화: provider={provider}, has_data={portfolio_data is not None}")
+                try:
+                    chat_service = PortfolioAnalysisChat(
+                        portfolio_data=portfolio_data,
+                        provider=provider
+                    )
+                    print("✅ ChatService 초기화 완료")
+                except Exception as init_error:
+                    print(f"❌ ChatService 초기화 실패: {init_error}")
+                    raise HTTPException(
+                        status_code=500,
+                        detail=f"AI 챗봇 초기화 실패: {str(init_error)}"
+                    )
         
         # AI 응답 생성
         print(f"💬 사용자 메시지: {request.message[:50]}...")
@@ -1604,10 +1623,55 @@ async def analyze_portfolio_endpoint():
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"분석 중 오류 발생: {str(e)}")
 
+@app.post("/chat/new-session", tags=["AI Chat"])
+async def start_new_chat_session():
+    """
+    새로운 대화 세션 시작 (기존 히스토리 무시)
+    
+    Returns:
+        새 세션 정보
+    """
+    if not LANGCHAIN_AVAILABLE:
+        raise HTTPException(
+            status_code=503,
+            detail="LangChain 서비스를 사용할 수 없습니다."
+        )
+    
+    global chat_service
+    
+    try:
+        # 기존 chat_service를 None으로 설정하여 새 세션 생성
+        chat_service = None
+        
+        # 포트폴리오 데이터 로드
+        portfolio_data = None
+        if os.path.exists(PARSED_DATA_FILE):
+            with open(PARSED_DATA_FILE, 'r', encoding='utf-8') as f:
+                portfolio_data = json.load(f)
+        
+        provider = os.getenv("AI_PROVIDER", "gemini")
+        
+        # 새 세션 강제 생성 (session_id를 명시하지 않으면 자동 생성)
+        chat_service = PortfolioAnalysisChat(
+            portfolio_data=portfolio_data,
+            provider=provider
+        )
+        
+        session_info = chat_service.get_session_info()
+        
+        return {
+            "message": "새로운 대화 세션이 시작되었습니다.",
+            "session_id": session_info["session_id"],
+            "provider": session_info["provider"]
+        }
+    
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"새 세션 생성 실패: {str(e)}")
+
 @app.delete("/chat/history", tags=["AI Chat"])
 async def clear_chat_history():
     """
-    채팅 히스토리 초기화
+    현재 채팅 히스토리 초기화 (세션은 유지, 메시지만 삭제)
     
     Returns:
         성공 메시지
