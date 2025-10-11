@@ -1,5 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, Bot, User, Loader2, Trash2, Sparkles } from 'lucide-react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { api } from '../api/client';
 import type { ChatMessage } from '../types';
 
@@ -272,7 +274,41 @@ const LlmChat: React.FC<LlmChatProps> = ({ sessionId }) => {
                   <User className="w-4 h-4 mt-0.5 text-blue-200 flex-shrink-0" />
                 )}
                 <div className="flex-1">
-                  <p className="text-xs whitespace-pre-wrap">{message.content}</p>
+                  {message.type === 'bot' ? (
+                    <div className="prose prose-sm max-w-none prose-headings:mt-2 prose-headings:mb-1 prose-p:my-1 prose-ul:my-1 prose-ol:my-1 prose-li:my-0.5">
+                      <ReactMarkdown 
+                        remarkPlugins={[remarkGfm]}
+                        components={{
+                          h1: ({node, ...props}) => <h1 className="text-base font-bold text-gray-900" {...props} />,
+                          h2: ({node, ...props}) => <h2 className="text-sm font-bold text-gray-800" {...props} />,
+                          h3: ({node, ...props}) => <h3 className="text-xs font-bold text-gray-700" {...props} />,
+                          p: ({node, ...props}) => <p className="text-xs text-gray-900 leading-relaxed" {...props} />,
+                          ul: ({node, ...props}) => <ul className="text-xs text-gray-900 list-disc list-inside space-y-0.5" {...props} />,
+                          ol: ({node, ...props}) => <ol className="text-xs text-gray-900 list-decimal list-inside space-y-0.5" {...props} />,
+                          li: ({node, ...props}) => <li className="text-xs text-gray-900" {...props} />,
+                          strong: ({node, ...props}) => <strong className="font-semibold text-gray-900" {...props} />,
+                          em: ({node, ...props}) => <em className="italic text-gray-800" {...props} />,
+                          code: ({node, inline, ...props}: any) => 
+                            inline ? (
+                              <code className="px-1 py-0.5 bg-gray-200 rounded text-xs font-mono text-red-600" {...props} />
+                            ) : (
+                              <code className="block p-2 bg-gray-800 text-gray-100 rounded text-xs font-mono overflow-x-auto" {...props} />
+                            ),
+                          blockquote: ({node, ...props}) => <blockquote className="border-l-4 border-blue-500 pl-3 py-1 my-2 text-xs text-gray-700 italic" {...props} />,
+                          a: ({node, ...props}) => <a className="text-blue-600 hover:text-blue-700 underline" {...props} />,
+                          table: ({node, ...props}) => <table className="min-w-full divide-y divide-gray-300 text-xs my-2" {...props} />,
+                          thead: ({node, ...props}) => <thead className="bg-gray-50" {...props} />,
+                          tbody: ({node, ...props}) => <tbody className="divide-y divide-gray-200" {...props} />,
+                          th: ({node, ...props}) => <th className="px-2 py-1 text-left text-xs font-semibold text-gray-900" {...props} />,
+                          td: ({node, ...props}) => <td className="px-2 py-1 text-xs text-gray-700" {...props} />,
+                        }}
+                      >
+                        {message.content}
+                      </ReactMarkdown>
+                    </div>
+                  ) : (
+                    <p className="text-xs whitespace-pre-wrap">{message.content}</p>
+                  )}
                   <p className={`text-xs mt-1 ${
                     message.type === 'user' ? 'text-blue-200' : 'text-gray-500'
                   }`}>
